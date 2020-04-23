@@ -64,7 +64,6 @@ class Dashboard extends React.Component
               'ui-vendors': {},
               'stripes-erm-components': {},
               'stripes-data-transfer-components': {},
-
             },
           };
     }
@@ -105,7 +104,10 @@ class Dashboard extends React.Component
             if (typeof rows[key].stable !== 'undefined') {
                 css = rows[key].stable ? 'good' : 'bad';
             }
-            return <div className={css} key={key}>{key}</div>;
+            const href = `https://jenkins-aws.indexdata.com/job/folio-org/job/${key}/job/master`;
+            return (<div className={css} key={key}>
+              <a href={href}>{key}</a>
+            </div>);
         });
     }
 
