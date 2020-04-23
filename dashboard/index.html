@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Stripes Jenkins Dashboard</title>
+<style>
+* {
+	margin: 0;
+	padding: 0;
+}
+
+#dashboard {
+/* 	width: 980px; */
+/*	background: silver; */
+	margin: 0 auto;
+}
+
+#header {
+	background: black;
+	color: white;
+}
+
+#footer {
+  clear: both;
+  background: green;
+}
+
+.column {
+	width: 33%;
+	float: left;
+}
+
+.column div {
+  width: 90%;
+  padding: .2em;
+}
+
+.good {
+    background-color: #90ee90;
+}
+
+.bad {
+    background-color: #ff9999;
+}
+</style>
+
+  </head>
+  <body>
+    <h1>GitHub <tt>master</tt> build status</h1>
+    <div id="dashboard" />
+
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="dashboard.js" type="text/babel"></script>
+  </body>
+</html>
