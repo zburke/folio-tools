@@ -65,6 +65,11 @@ class Dashboard extends React.Component
               'stripes-erm-components': {},
               'stripes-data-transfer-components': {},
             },
+            platforms: {
+              'platform-complete': { branch: 'snapshot' },
+              'platform-core': { branch: 'snapshot' },
+              'platform-erm': { branch: 'snapshot' },
+            }
           };
     }
 
@@ -72,19 +77,22 @@ class Dashboard extends React.Component
         this.fetchStatus('stripes');
         this.fetchStatus('core');
         this.fetchStatus('complete');
+        this.fetchStatus('platforms');
     }
 
     fetchStatus = (repoGroup) => {
         const repos = this.state[repoGroup];
         Object.keys(repos).forEach(key => {
             if (typeof repos[key].stable === "undefined") {
-                fetch(`proxy.php?module=${key}`)
+                fetch(`proxy.php?module=${key}&branch=${repos[key].branch ? repos[key].branch : 'master' }`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.lastCompletedBuild.number == data.lastSuccessfulBuild.number) {
                         repos[key].stable = true;
+                        repos[key].comp = `${data.lastCompletedBuild.number} == ${data.lastSuccessfulBuild.number}`
                     } else {
                         repos[key].stable = false;
+                        repos[key].comp = `${data.lastCompletedBuild.number} != ${data.lastSuccessfulBuild.number}`
                     }
 
                     this.setState({ [repoGroup] : repos });
@@ -104,9 +112,9 @@ class Dashboard extends React.Component
             if (typeof rows[key].stable !== 'undefined') {
                 css = rows[key].stable ? 'good' : 'bad';
             }
-            const href = `https://jenkins-aws.indexdata.com/job/folio-org/job/${key}/job/master`;
+            const href = `https://jenkins-aws.indexdata.com/job/folio-org/job/${key}/job/${rows[key].branch ? rows[key].branch : 'master'}`;
             return (<div className={css} key={key}>
-              <a href={href}>{key}</a>
+              <a href={href}>{key} {rows[key].comp}</a>
             </div>);
         });
     }
@@ -114,9 +122,9 @@ class Dashboard extends React.Component
     render () {
         return (
           <div>
-            <div class="column"><h2>stripes</h2>{this.buildTable('stripes')}</div>
-            <div class="column"><h2>platform-core</h2>{this.buildTable('core')}</div>
-            <div class="column"><h2>platform-complete</h2>{this.buildTable('complete')}</div>
+            <div className="column"><h2>stripes</h2>{this.buildTable('stripes')} <h2>platforms</h2>{this.buildTable('platforms')}</div>
+            <div className="column"><h2>platform-core</h2>{this.buildTable('core')}</div>
+            <div className="column"><h2>platform-complete</h2>{this.buildTable('complete')}</div>
           </div>
         )
     }
