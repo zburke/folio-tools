@@ -53,12 +53,18 @@ $modules = [
   'stripes-smart-components',
   'stripes-util',
   'stripes-cli',
+
+  'platform-complete',
+  'platform-core',
+  'platform-erm',
+
 ];
 
 $module = $_GET['module'];
+$branch = $_GET['branch'] ? $_GET['branch'] : 'master';
 if (in_array($module, $modules)) {
   header('Content-type: application/json;charset=utf-8');
-  echo file_get_contents("https://jenkins-aws.indexdata.com/job/folio-org/job/${module}/job/master/api/json?pretty=true");
+  echo file_get_contents("https://jenkins-aws.indexdata.com/job/folio-org/job/${module}/job/${branch}/api/json?pretty=true");
 }
 else {
   header('Content-type: application/json;charset=utf-8');
