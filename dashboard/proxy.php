@@ -58,13 +58,21 @@ $modules = [
   'platform-core',
   'platform-erm',
 
+  'build-platform-complete-snapshot',
+  'build-platform-core-snapshot',
 ];
 
 $module = $_GET['module'];
+$jobRoot = $_GET['jobRoot'] ? $_GET['jobRoot'] : 'folio-org';
 $branch = $_GET['branch'] ? $_GET['branch'] : 'master';
 if (in_array($module, $modules)) {
   header('Content-type: application/json;charset=utf-8');
-  echo file_get_contents("https://jenkins-aws.indexdata.com/job/folio-org/job/${module}/job/${branch}/api/json?pretty=true");
+  // the save yarn.lock for #snapshot branches are a bit special
+  if ($jobRoot == 'Automation' && $branch == 'snapshot') {
+    echo file_get_contents("https://jenkins-aws.indexdata.com/job/${jobRoot}/job/${module}/api/json?pretty=true");
+  } else {
+    echo file_get_contents("https://jenkins-aws.indexdata.com/job/${jobRoot}/job/${module}/job/${branch}/api/json?pretty=true");
+  }
 }
 else {
   header('Content-type: application/json;charset=utf-8');
