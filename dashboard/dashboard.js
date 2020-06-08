@@ -69,6 +69,8 @@ class Dashboard extends React.Component
               'platform-complete': { branch: 'snapshot' },
               'platform-core': { branch: 'snapshot' },
               'platform-erm': { branch: 'snapshot' },
+              'build-platform-complete-snapshot': { jobRoot: 'Automation', branch: 'snapshot' },
+              'build-platform-core-snapshot': { jobRoot: 'Automation', branch: 'snapshot' },
             }
           };
     }
@@ -84,7 +86,7 @@ class Dashboard extends React.Component
         const repos = this.state[repoGroup];
         Object.keys(repos).forEach(key => {
             if (typeof repos[key].stable === "undefined") {
-                fetch(`proxy.php?module=${key}&branch=${repos[key].branch ? repos[key].branch : 'master' }`)
+                fetch(`proxy.php?module=${key}&branch=${repos[key].branch ? repos[key].branch : 'master' }&jobRoot=${repos[key].jobRoot ? repos[key].jobRoot : ''}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.lastCompletedBuild.number == data.lastSuccessfulBuild.number) {
