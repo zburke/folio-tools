@@ -114,7 +114,11 @@ class Dashboard extends React.Component
             if (typeof rows[key].stable !== 'undefined') {
                 css = rows[key].stable ? 'good' : 'bad';
             }
-            const href = `https://jenkins-aws.indexdata.com/job/folio-org/job/${key}/job/${rows[key].branch ? rows[key].branch : 'master'}`;
+
+            let href = `https://jenkins-aws.indexdata.com/job/folio-org/job/${key}/job/${rows[key].branch ? rows[key].branch : 'master'}`;
+            if (rows[key].jobRoot && rows[key].jobRoot == 'Automation') {
+              href = `https://jenkins-aws.indexdata.com/job/Automation/job/${key}/`;
+            }
             return (<div className={css} key={key}>
               <a href={href}>{key} {rows[key].comp}</a>
             </div>);
