@@ -19,6 +19,12 @@ LOCAL_JSON=$1
 #
 LOCAL=`cat $LOCAL_JSON | jq '.stripes.permissionSets'`
 
+#
+# exit if there are no locally-defined permissions
+#
+if [ "$LOCAL" == "null" ]; then
+    exit
+fi
 
 # are we checking one permission, or all permissions?
 if [ $# -eq 2 ]; then
@@ -32,9 +38,15 @@ for P in $LOCAL_NAMES; do
     OKAPI_SP=`stripes okapi get perms/permissions?query=permissionName==${P} --okapi https://folio-snapshot-okapi.aws.indexdata.com | jq '.permissions[0].subPermissions'`
     if [ "$OKAPI_SP" == "null" ] || [ -z "$OKAPI_SP" ]; then OKAPI_SP='[]'; fi;
 
-    LOCAL_SP=`echo $LOCAL | jq --arg p $P '.[] | select(.permissionName==\$p).subPermissions'`
+    LOCAL_SP=`echo $LOCAL | jq --arg p $P '.[] | select(.permissionName==$p).subPermissions'`
     if [ "$LOCAL_SP" == "null" ] || [ -z "$LOCAL_SP" ]; then LOCAL_SP='[]'; fi;
 
+    COUNT_P=`echo $LOCAL | jq --arg p $P '[. [] | select(.permissionName==$p)] | length'`
+    if [ "$COUNT_P" != 1 ]; then
+        echo "* $P"
+        echo "    ERROR, multiple permissions named ${P} in ${LOCAL_JSON}"
+        continue;
+    fi
 
     echo "{ \"okapi\": $OKAPI_SP, \"local\": $LOCAL_SP }" | jq -e '(.okapi - .local | length==0) and (.local - .okapi | length==0)' 2>&1 1>/dev/null
     if [ $? -ne 0 ]; then
