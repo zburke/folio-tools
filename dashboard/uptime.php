@@ -3,28 +3,21 @@
 // echo 'success' if a platform's last build was successful
 // echo 'failure' otherwise
 
-$modules = [
-  'build-platform-complete-snapshot',
-  'build-platform-core-snapshot',
-];
+$url = str_replace('uptime.php', 'proxy.php', $_SERVER['SCRIPT_URI']);
 
 $module = $_GET['module'];
 $jobRoot = $_GET['jobRoot'] ? $_GET['jobRoot'] : 'folio-org';
 $branch = $_GET['branch'] ? $_GET['branch'] : 'master';
-if (in_array($module, $modules)) {
-  header('Content-type: text/plain;charset=utf-8');
-  $data = "";
-  // the save yarn.lock for #snapshot branches are a bit special
-  if ($jobRoot == 'Automation' && $branch == 'snapshot') {
-    $data = file_get_contents("https://jenkins-aws.indexdata.com/job/${jobRoot}/job/${module}/api/json?pretty=true");
-  } else {
-    $data = file_get_contents("https://jenkins-aws.indexdata.com/job/${jobRoot}/job/${module}/job/${branch}/api/json?pretty=true");
-  }
 
+header('Content-type: text/plain;charset=utf-8');
+try {
+  $data = file_get_contents("${url}?module=${module}&jobRoot=${jobRoot}&branch=${branch}");
   $json = json_decode($data);
-
-  echo ($json->lastCompletedBuild->number == $json->lastSuccessfulBuild->number) ? 'success' : 'failure';
-}
-else {
-  echo "${module} is not a recognized module";
+  if (property_exists($json, 'lastSuccessfulBuild')) {
+    echo ($json->lastCompletedBuild->number == $json->lastSuccessfulBuild->number) ? 'success' : 'failure';
+  } else {
+    echo 'failure';
+  }
+} catch (Exception $e) {
+  print_r($e);
 }
