@@ -1,0 +1,54 @@
+#!/bin/bash
+
+#
+# generate item records and check them all out.
+# this is pretty clunky; lots of hard-coded data is required below.
+#
+# this assumes stripes-cli is installed and has a valid login token cached
+#
+#
+
+OKAPI="https://folio-snapshot-okapi.dev.folio.org"
+
+holdingsRecordId="5c3968d6-aed3-48f2-bb49-bff7cebe7ede"
+materialType="1a54b431-2e4f-452d-9cae-9cee66c9a892"
+permanentLoanType="2b94c631-fca9-4892-a730-03ee529ffe27"
+
+userBarcode="775849269788032"
+servicePointId="7c5abc9f-f3d7-4856-b8d7-6712462ca007"
+
+COUNTER=0
+while [  $COUNTER -lt 110 ]; do
+  BARCODE=`date +"%s"`
+  BARCODE="${BARCODE}${RANDOM}"
+
+  ITEM_JSON=$(cat <<EOT
+  {
+      "status":{"name":"Available"},
+      "holdingsRecordId":"${holdingsRecordId}",
+      "barcode":"${BARCODE}",
+      "materialType":{"id":"${materialType}"},
+      "permanentLoanType":{"id":"${holdingsRecordId}"}
+  }
+EOT
+  );
+
+  CHECKOUT_JSON=$(cat <<EOT
+  {
+      "itemBarcode":"${BARCODE}",
+      "userBarcode":"${userBarcode}",
+      "servicePointId":"${servicePointId}"
+  }
+EOT
+  );
+
+
+  echo $JSON;
+
+  echo -n "creating ${barcode}..."
+  echo $ITEM_JSON | yarn stripes okapi post inventory/items --okapi $OKAPI
+  echo $CHECKOUT_JSON | yarn stripes okapi post circulation/check-out-by-barcode --okapi $OKAPI
+  echo " done"
+
+  let COUNTER=COUNTER+1
+done
