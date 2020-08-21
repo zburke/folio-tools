@@ -7,7 +7,7 @@ $modules = [
   'ui-checkin',
   'ui-checkout',
   'ui-circulation',
-  'ui-courses'
+  'ui-courses',
   'ui-data-import',
   'ui-data-export',
   'ui-developer',
