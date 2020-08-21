@@ -7,6 +7,7 @@ $modules = [
   'ui-checkin',
   'ui-checkout',
   'ui-circulation',
+  'ui-courses'
   'ui-data-import',
   'ui-data-export',
   'ui-developer',
@@ -24,6 +25,7 @@ $modules = [
   'ui-notes',
   'ui-orders',
   'ui-organizations',
+  'ui-plugin-create-inventory-records',
   'ui-plugin-find-agreement',
   'ui-plugin-find-contact',
   'ui-plugin-find-erm-usage-data-provider',
@@ -53,6 +55,8 @@ $modules = [
   'stripes-smart-components',
   'stripes-util',
   'stripes-cli',
+  'stripes-testing',
+  'stripes',
 
   'platform-complete',
   'platform-core',
