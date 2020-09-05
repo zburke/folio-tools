@@ -226,15 +226,20 @@ const getOrCreatePset = async (name, filename) => {
 };
 
 const assignPermissions = (user, pset) => {
-  pset.subPermissions.forEach(p => {
+  eachPromise(pset.subPermissions, (p) => {
     const up = {
       permissionName: p,
     };
     console.log(`  adding ${user.username} => ${p}`)
     okapiPost(`/perms/users/${user.id}/permissions?indexField=userId`, up)
     .catch(err => {
-      const e = JSON.parse(err.body)
-      console.error(e.errors[0].message)
+      try {
+        const e = JSON.parse(err.body)
+        console.error(e.errors[0].message)
+      }
+      catch(e) {
+        console.error(e.body);
+      }
     });
   });
 };
@@ -263,6 +268,20 @@ const configureUser = async (p, path) => {
     console.error(e);
   }
 };
+
+/**
+ * eachPromise
+ * iterate through an array of items IN SERIES, applying the given async
+ * function to each.
+ * @arg [] arr array of elements
+ * @arg function fn function to apply to each element
+ * @return void
+ */
+const eachPromise = (arr, fn) => {
+  if (!Array.isArray(arr)) return Promise.reject(new Error('Array not found'));
+  return arr.reduce((prev, cur) => (prev.then(() => fn(cur))), Promise.resolve());
+}
+
 
 /**
  * main:
@@ -298,13 +317,7 @@ async function main() {
   try {
     const psets = fs.readdirSync(path);
     if (psets.length) {
-      psets.forEach(p => {
-        // let id = setInterval(() => {
-        //   configureUser(p, path);
-        // }, 1000)
-
-        configureUser(p, path);
-      });
+      eachPromise(psets, (p) => configureUser(p, path));
     } else {
       console.error(`Found ${path} but it was empty :(`)
       process.exit(1);
