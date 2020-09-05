@@ -216,13 +216,23 @@ const assignCredentials = async (user) => {
 /**
  * getOrCreatePset
  */
-const getOrCreatePset = async (name, filename) => {
+const getOrCreatePset = async (name, filename, permissions) => {
+  // read the array of displayNames from the file, then map from displayName
+  // to permissionName
   const contents = JSON.parse(fs.readFileSync(filename, { encoding: 'UTF-8'}));
+  const subPermissions = [];
+  contents.forEach(d => {
+    if (permissions[d]) {
+      subPermissions.push(permissions[d]);
+    } else {
+      console.error(`Could not find the permissions "${d}".`);
+    }
+  });
 
   const pset = {
     "displayName": name,
-    "mutable":true,
-    "subPermissions": Object.values(contents),
+    "mutable": true,
+    subPermissions
   };
 
   const psets = await okapiGet(`/perms/permissions?query=displayName==${name}`);
@@ -251,7 +261,7 @@ const assignPermissions = (user, pset) => {
     const up = {
       permissionName: p,
     };
-    console.log(`  adding ${user.username} => ${p}`)
+    console.log(`  granting ${p} to ${user.username}`)
     okapiPost(`/perms/users/${user.id}/permissions?indexField=userId`, up)
     .catch(err => {
       try {
@@ -273,21 +283,40 @@ const assignPermissions = (user, pset) => {
  * 3. create a pset
  * 4. assign it to the user
  *
- * @arg string username
+ * @arg string p, name of a file to read, e.g. some-user.json
+ * @arg string path, path to directory containing p, e.g. ./foo/bar
+ * @arg object permissions, map from displayName => permissionName
  */
-const configureUser = async (p, path) => {
+const configureUser = async (p, path, permissions) => {
   try {
     const username = p.match(/(.*)\.json/)[1];
 
     const user = await getOrCreateUser(username);
     await assignPermissionsUser(user);
     await assignCredentials(user);
-    const pset = await getOrCreatePset(username, `${path}/${p}`)
+    const pset = await getOrCreatePset(username, `${path}/${p}`, permissions);
     await assignPermissions(user, pset);
   }
   catch(e) {
     console.error(e);
   }
+};
+
+/**
+ * getPermissions
+ * retrieve all permissions. Return an object mapping displayName => permissionName
+ */
+const getPermissions = async () => {
+  const res = await okapiGet('/perms/permissions?query=visible==true%20and%20mutable==false&length=2000');
+  if (res.json.totalRecords) {
+    const hash = {};
+    res.json.permissions.forEach(p => {
+      hash[p.displayName] = p.permissionName;
+    });
+
+    return hash;
+  }
+  throw "Could not retrieve permissions";
 };
 
 /**
@@ -301,12 +330,13 @@ const configureUser = async (p, path) => {
 const eachPromise = (arr, fn) => {
   if (!Array.isArray(arr)) return Promise.reject(new Error('Array not found'));
   return arr.reduce((prev, cur) => (prev.then(() => fn(cur))), Promise.resolve());
-}
+};
 
 
 /**
  * main:
  * login
+ * get all visible permissions
  * read pset directory
  * foreach pset
  *   create a corresponding user
@@ -336,9 +366,10 @@ async function main() {
   options.headers['x-okapi-token'] = res.headers['x-okapi-token'];
 
   try {
+    const permissions = await getPermissions();
     const psets = fs.readdirSync(path);
     if (psets.length) {
-      eachPromise(psets, (p) => configureUser(p, path));
+      eachPromise(psets, (p) => configureUser(p, path, permissions));
     } else {
       console.error(`Found ${path} but it was empty :(`)
       process.exit(1);

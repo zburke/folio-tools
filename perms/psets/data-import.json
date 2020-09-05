@@ -1,6 +1,6 @@
-{
-  "Inventory: all permissions": "ui-inventory.all-permissions.TEMPORARY",
-  "Settings (Inventory): Display list of settings pages": "ui-inventory.settings.list.view",
-  "Settings (data-import): display list of settings pages": "settings.data-import.enabled",
-  "UI: ui-data-import module is enabled": "module.data-import.enabled"
-}
+[
+  "Inventory: all permissions",
+  "Settings (Inventory): Display list of settings pages",
+  "Settings (data-import): display list of settings pages",
+  "UI: ui-data-import module is enabled"
+]
