@@ -1,0 +1,13 @@
+{
+  "Check in: All permissions": "ui-checkin.all",
+  "Check out: Check out circulating items": "ui-checkout.circulation",
+  "Inventory: View instances, holdings, and items": "ui-inventory.instance.view",
+  "Notes: Can view a note": "ui-notes.item.view",
+  "Users: Can view fees/fines": null,
+  "Users: Can view patron blocks": null,
+  "Users: Can view proxies assigned to users": "ui-users.viewproxies",
+  "Users: Can view service points assigned to users": "ui-users.viewuserservicepoints",
+  "Users: Can view user profile": "ui-users.view",
+  "Users: User loans view": "ui-users.loans.view",
+  "Users: View requests": "ui-users.requests.all"
+}

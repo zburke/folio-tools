@@ -1,0 +1,14 @@
+{
+  "Inventory: Mark items withdrawn ": ,
+  "Inventory: Move holdings": "ui-inventory.holdings.move",
+  "Inventory: Move items ": ,
+  "Inventory: View, create, edit instances": "ui-inventory.instance.edit",
+  "Inventory: View, create, edit, delete holdings": "ui-inventory.holdings.delete",
+  "Inventory: View, create, edit, delete items": "ui-inventory.item.delete",
+  "Inventory: View, create, edit, mark missing items ": ,
+  "Settings (Inventory): Display list of settings pages": "ui-inventory.settings.list.view",
+  "Settings (data-export): display list of settings pages": "settings.data-export.enabled",
+  "Settings (data-import): display list of settings pages": "settings.data-import.enabled",
+  "UI: Data export module is enabled": "module.data-export.enabled",
+  "quickMARC: View, edit": "ui-quick-marc.quick-marc-editor.all"
+}
