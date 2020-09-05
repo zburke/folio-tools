@@ -119,6 +119,18 @@ const credentialsExist = async (user) => {
   return res.json.credentialsExist;
 };
 
+/**
+ * createUser
+ * create a user with the following attributes:
+ * username: username
+ * barcode: a number
+ * active: true
+ * type: "patron"
+ * patronGroup: id of the 'staff' group
+ * personal: { lastName: "Admin", firstName: username}
+ *
+ * @return object
+ */
 const createUser = async (username) => {
   const groups = await okapiGet('/groups?query=group==staff');
   if (groups.json.totalRecords === 1) {
@@ -137,6 +149,8 @@ const createUser = async (username) => {
 
     const res = await okapiPost('/users', user);
     return res.json
+  } else {
+    throw "response was not an object, or did not contain a single patron group";
   }
 }
 
@@ -159,7 +173,7 @@ const getOrCreateUser = async (username) => {
 
 /**
  * assignPermissionsUser
- *
+ * retrieve the permissions user; create one if one does not exist.
  */
 const assignPermissionsUser = async (user) => {
   // okapiGet throws if the response is non-200, but we may receive 404s here
@@ -225,6 +239,13 @@ const getOrCreatePset = async (name, filename) => {
   }
 };
 
+/**
+ * assignPermissions
+ * assign the permissions in the given pset to the given user, one by one,
+ * in series.
+ * @arg object user
+ * @arg object pset
+ */
 const assignPermissions = (user, pset) => {
   eachPromise(pset.subPermissions, (p) => {
     const up = {
