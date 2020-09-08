@@ -4,8 +4,12 @@ const util = require('util');
 
 
 /**
- * given a directory containing a list of json files formatted like
- *   "pset description": "pset name"
+ * create users with permissions read from local files
+ * usage: node $0 some-url some-directory
+ * e.g. node add-users.js folio-snapshot-okapi.dev.folio.org ./psets
+ *
+ * given a directory containing a list of json files containing a single array
+ * of strings representing permission set display names,
  * iterate through the files, for each:
  *   create a user named for the pset
  *     create a corresponding permissions user
