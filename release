@@ -1,0 +1,129 @@
+#!/bin/sh
+
+#
+# handle release of a new version from tip-of-master in GitHub and Jira:
+#
+#   * tag tip of master with the new version
+#   * push the tag to GitHub
+#   * find Jira tags in commit-subjects since the last release and update their fix version
+#   * trigger a build in Jenkins
+#
+# usage: $0 <JIRA-PROJECT> <JIRA-release> [commit-hash]
+#
+#
+
+
+
+quit()
+{
+    if [[ -n $1 ]]; then echo $1; fi;
+    echo "usage: $0 <JIRA-NAME> <version-number>"
+    # //$2 && rm -rf $2;
+
+    exit 1;
+}
+
+
+#
+# getAttr - retrieve attribute from MacOS security service
+# $1 service-name, e.g. jira-password
+# $2 field, e.g. acct
+#
+getAttr()
+{
+    security find-generic-password -s "$1" | grep $2 | cut -d\" -f 4
+}
+
+
+#
+# getPassword - retrieve password from MacOS security service
+# $1 service-name, e.g. jira-password
+# $2 account, e.g. someusername
+#
+getPassword()
+{
+    security find-generic-password -s "$1" -a "$2" -w
+}
+
+
+JIRA=$1       # jira project, e.g. STCOR
+TAG=$2        # release as tagged on Jira, e.g. 1.2.3
+if [[ -z $JIRA || -z $TAG ]]; then
+    quit
+fi
+
+GHTAG="v$TAG" # release as tagged in git, e.g. v1.2.3
+
+# jira username from keychain, else $JIRA_USERNAME, else $USER
+JIRA_USER=`getAttr "jira-password" "acct"`
+if [[ -z $JIRA_USER ]]; then JIRA_USER=$JIRA_USERNAME; fi
+if [[ -z $JIRA_USER ]]; then JIRA_USER=$USER; fi
+
+JIRA_PASS=`getPassword "jira-password" "$JIRA_USER"`
+if [[ -z $JIRA_PASS ]]; then JIRA_PASS=$JIRA_PASSWORD; fi
+if [[ -z $JIRA_USER || -z $JIRA_PASS ]]; then
+    quit "could not find jira credentials"
+fi
+
+# jenkins username from keychain, else $JENKINS_USERNAME, else $USER
+JENKINS_USER=`getAttr "jenkins-token" "acct"`
+if [[ -z $JENKINS_USER ]]; then JENKINS_USER=$JENKINS_USERNAME; fi
+if [[ -z $JENKINS_USER ]]; then JENKINS_USER=$USER; fi
+
+JENKINS_PASS=`getPassword "jenkins-token" $JENKINS_USER`
+if [[ -z $JENKINS_PASS ]]; then JENKINS_PASS=$JENKINS_PASSWORD; fi
+if [[ -z $JENKINS_USER || -z $JENKINS_PASS ]]; then
+    quit "could not find jenkins credentials"
+fi
+
+
+# extract the repo name from the GitHub URL
+REPO=`git config remote.origin.url | sed -E 's/.*\/([^\/]+)\.git$/\1/'`
+
+# get the most recent release
+SINCE=`git tag -l | tail -1`
+
+# get JIRAs from commit headers between previous and current releases
+TICKETS=`git log --pretty=oneline $SINCE..master | cut -c42- | egrep ^$JIRA  | sed -E "s/^($JIRA\-[0-9]+).*/\1/g" | sort | uniq`
+
+# base64 auth token for Jira
+JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
+
+echo "tagging release $GHTAG and pushing it to GitHub..."
+git tag $GHTAG
+git push --tags
+
+# update fix-version for each ticket
+for ticket in $TICKETS; do
+    NEW_VERSIONS=
+    OLD_VERSIONS=`curl -s --location -X GET https://issues.folio.org/rest/api/2/issue/$ticket -q | jq '.fields.fixVersions[] | .name '`
+    if [[ -n $OLD_VERSIONS ]]; then
+        for version in $OLD_VERSIONS; do
+            if [[ -z $NEW_VERSIONS ]]; then
+                NEW_VERSIONS="{\"name\": \"$TAG\"}";
+            else
+                NEW_VERSIONS="${NEW_VERSIONS}, {\"name\": \"$TAG\"}";
+            fi;
+        done
+    else
+        NEW_VERSIONS="{\"name\": \"$TAG\"}";
+    fi
+
+    curl -s --location \
+        -X PUT "https://issues.folio.org/rest/api/2/issue/$ticket" \
+        -H "content-type: application/json" \
+        -H "Authorization: Basic $JIRA_AUTH_HEADER" \
+        -d "{\"fields\": { \"fixVersions\": [$NEW_VERSIONS] } }"
+    echo "added $TAG to $ticket"
+done;
+
+# trigger a jenkins build
+# base64 auth token for Jenkins
+JENKINS_AUTH_HEADER=`printf $JENKINS_USER:$JENKINS_PASS | base64`
+
+echo "triggering Jenkins build..."
+
+curl -X POST https://jenkins-aws.indexdata.com/job/folio-org/job/$REPO/view/tags/job/$GHTAG/build \
+    --header "Authorization: Basic $JENKINS_AUTH_HEADER" \
+
+echo 'done!'
