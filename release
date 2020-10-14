@@ -65,6 +65,20 @@ if [[ -z $JIRA || -z $TAG ]]; then
     quit
 fi
 
+# check on required helpers: git, jq, curl
+if ! [ -x "$(command -v git)" ]; then
+    quit "git is required but could not be found in your path"
+fi
+
+if ! [ -x "$(command -v jq)" ]; then
+    quit "jq is required but could not be found in your path"
+fi
+
+if ! [ -x "$(command -v curl)" ]; then
+    quit "curl is required but could not be found in your path"
+fi
+
+
 # jira version must match npm version
 NPM_VERSION=`grep version package.json | cut -d\" -f 4`
 if [ ! "$NPM_VERSION" = "$TAG" ]; then
@@ -126,7 +140,7 @@ JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
 
 echo "tagging release $GHTAG and pushing it to GitHub..."
 git tag $GHTAG
-git push --tags
+git push --tags -q
 
 # update fix-version for each ticket
 for ticket in $TICKETS; do
