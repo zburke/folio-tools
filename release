@@ -12,6 +12,13 @@
 #
 # start-commit defaults to the most recent tag, end-commit to tip-of-master
 #
+# credentials for Jira and Jenkins are pulled from the MacOS keychain
+# stored with the service string "jira-password" and "jenkins-token",
+# respectively, including the username in the "account" field, or from
+# the environment variables JIRA_PASSWORD and JENKINS_TOKEN. Likewise,
+# the username can alternatively be found in the environment variables
+# JIRA_USERNAME and JENKINS_USERNAME, or USER, if it is not found in any
+# of the previous scopes.
 #
 
 
@@ -58,6 +65,20 @@ if [[ -z $JIRA || -z $TAG ]]; then
     quit
 fi
 
+# check on required helpers: git, jq, curl
+if ! [ -x "$(command -v git)" ]; then
+    quit "git is required but could not be found in your path"
+fi
+
+if ! [ -x "$(command -v jq)" ]; then
+    quit "jq is required but could not be found in your path"
+fi
+
+if ! [ -x "$(command -v curl)" ]; then
+    quit "curl is required but could not be found in your path"
+fi
+
+
 # jira version must match npm version
 NPM_VERSION=`grep version package.json | cut -d\" -f 4`
 if [ ! "$NPM_VERSION" = "$TAG" ]; then
@@ -102,7 +123,7 @@ if [[ -z $JENKINS_USER ]]; then JENKINS_USER=$JENKINS_USERNAME; fi
 if [[ -z $JENKINS_USER ]]; then JENKINS_USER=$USER; fi
 
 JENKINS_PASS=`getPassword "jenkins-token" $JENKINS_USER`
-if [[ -z $JENKINS_PASS ]]; then JENKINS_PASS=$JENKINS_PASSWORD; fi
+if [[ -z $JENKINS_PASS ]]; then JENKINS_PASS=$JENKINS_TOKEN; fi
 if [[ -z $JENKINS_USER || -z $JENKINS_PASS ]]; then
     quit "could not find jenkins credentials"
 fi
@@ -119,7 +140,7 @@ JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
 
 echo "tagging release $GHTAG and pushing it to GitHub..."
 git tag $GHTAG
-git push --tags
+git push --tags -q
 
 # update fix-version for each ticket
 for ticket in $TICKETS; do
