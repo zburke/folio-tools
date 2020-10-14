@@ -8,16 +8,18 @@
 #   * find Jira tags in commit-subjects since the last release and update their fix version
 #   * trigger a build in Jenkins
 #
-# usage: $0 <JIRA-PROJECT> <JIRA-release> [commit-hash]
+# usage: $0 <JIRA-PROJECT> <JIRA-release> [start-commit] [end-commit]
+#
+# start-commit defaults to the most recent tag, end-commit to tip-of-master
 #
 #
-
 
 
 quit()
 {
     if [[ -n $1 ]]; then echo $1; fi;
-    echo "usage: $0 <JIRA-NAME> <version-number>"
+    echo "usage: $0 <JIRA-NAME> <version-number> [start-hash] [end-hash]"
+    echo "start-hash defaults to the most recent tag, end-hash to tip-of-master"
     # //$2 && rm -rf $2;
 
     exit 1;
@@ -48,8 +50,37 @@ getPassword()
 
 JIRA=$1       # jira project, e.g. STCOR
 TAG=$2        # release as tagged on Jira, e.g. 1.2.3
+HASH_FROM=$3  # retrieve commits from here...
+HASH_TO=$4    # ... to here
+
+# check on required arguments
 if [[ -z $JIRA || -z $TAG ]]; then
     quit
+fi
+
+# jira version must match npm version
+NPM_VERSION=`grep version package.json | cut -d\" -f 4`
+if [ ! "$NPM_VERSION" = "$TAG" ]; then
+    quit "The npm version ($NPM_VERSION) and Jira version ($TAG) must match."
+fi
+
+# validate optional arguments
+# hash-from defaults to the last tag if not specified
+if [[ -z $HASH_FROM ]]; then
+    HASH_FROM=`git tag -l | tail -1`
+fi
+
+if [ ! git show $HASH_FROM > /dev/null 2>&1 ]; then
+    quit "Sorry; $HASH_FROM was not recognized as a tag or commit hash."
+fi
+
+# hash-to defaults to master if not specified
+if [[ -z $HASH_TO ]]; then
+    HASH_TO="master"
+fi
+
+if [ ! git show $HASH_TO > /dev/null 2>&1 ]; then
+    quit "Sorry; $HASH_TO was not recognized as a tag or commit hash."
 fi
 
 GHTAG="v$TAG" # release as tagged in git, e.g. v1.2.3
@@ -80,11 +111,8 @@ fi
 # extract the repo name from the GitHub URL
 REPO=`git config remote.origin.url | sed -E 's/.*\/([^\/]+)\.git$/\1/'`
 
-# get the most recent release
-SINCE=`git tag -l | tail -1`
-
 # get JIRAs from commit headers between previous and current releases
-TICKETS=`git log --pretty=oneline $SINCE..master | cut -c42- | egrep ^$JIRA  | sed -E "s/^($JIRA\-[0-9]+).*/\1/g" | sort | uniq`
+TICKETS=`git log --pretty=oneline ${HASH_FROM}..${HASH_TO} | cut -c42- | egrep ^$JIRA  | sed -E "s/^($JIRA\-[0-9]+).*/\1/g" | sort | uniq`
 
 # base64 auth token for Jira
 JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
