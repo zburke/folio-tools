@@ -1,16 +1,16 @@
 #!/bin/sh
 
 #
-# handle release of a new version from tip-of-master in GitHub and Jira:
+# handle release of a new version from tip-of-branch in GitHub and Jira:
 #
-#   * tag tip of master with the new version
+#   * tag tip of current branch with the new version
 #   * push the tag to GitHub
 #   * find Jira tags in commit-subjects since the last release and update their fix version
 #   * trigger a build in Jenkins
 #
 # usage: $0 <JIRA-PROJECT> <JIRA-release> [start-commit] [end-commit]
 #
-# start-commit defaults to the most recent tag, end-commit to tip-of-master
+# start-commit defaults to the most recent tag, end-commit to tip-of-branch
 #
 # credentials for Jira and Jenkins are pulled from the MacOS keychain
 # stored with the service string "jira-password" and "jenkins-token",
@@ -26,7 +26,7 @@ quit()
 {
     if [[ -n $1 ]]; then echo $1; fi;
     echo "usage: $0 <JIRA-NAME> <version-number> [start-hash] [end-hash]"
-    echo "start-hash defaults to the most recent tag, end-hash to tip-of-master"
+    echo "start-hash defaults to the most recent tag, end-hash to tip-of-current-branch"
     # //$2 && rm -rf $2;
 
     exit 1;
@@ -95,13 +95,13 @@ if [ ! git show $HASH_FROM > /dev/null 2>&1 ]; then
     quit "Sorry; $HASH_FROM was not recognized as a tag or commit hash."
 fi
 
-# hash-to defaults to master if not specified
+# hash-to defaults to tip of current branch if not specified
 if [[ -z $HASH_TO ]]; then
-    HASH_TO="master"
+    HASH_TO=`git rev-parse --abbrev-ref HEAD`
 fi
 
 if [ ! git show $HASH_TO > /dev/null 2>&1 ]; then
-    quit "Sorry; $HASH_TO was not recognized as a tag or commit hash."
+    quit "Sorry; $HASH_TO was not recognized as a tag, commit hash, or branch-name."
 fi
 
 GHTAG="v$TAG" # release as tagged in git, e.g. v1.2.3
