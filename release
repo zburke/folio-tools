@@ -172,7 +172,13 @@ JENKINS_AUTH_HEADER=`printf $JENKINS_USER:$JENKINS_PASS | base64`
 
 echo "triggering Jenkins build..."
 
-curl -X POST https://jenkins-aws.indexdata.com/job/folio-org/job/$REPO/view/tags/job/$GHTAG/build \
-    --header "Authorization: Basic $JENKINS_AUTH_HEADER" \
+if [! curl -s -X POST https://jenkins-aws.indexdata.com/job/folio-org/job/$REPO/view/tags/job/$GHTAG/build \
+    --header "Authorization: Basic $JENKINS_AUTH_HEADER" ]; then
+    echo GitHub hasn't pushed the tag to Jenkins yet. Wait a few seconds, then visit
+    echo
+    echo    https://jenkins-aws.indexdata.com/job/folio-org/job/$REPO/view/tags/job/$GHTAG
+    echo
+    echo sign in, and click the 'Build Now' button to build your release.
+fi
 
 echo 'done!'
