@@ -140,6 +140,7 @@ JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
 
 echo "tagging release $GHTAG and pushing it to GitHub..."
 git tag $GHTAG
+git push
 git push --tags -q
 
 # update fix-version for each ticket
