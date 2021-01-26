@@ -85,10 +85,10 @@ class JSpam {
   {
     const body = {
       "fields": {
-        project: { id: project.id },
+        "project": { id: project.id },
         summary,
         description,
-        issueType: { id: this.taskType.id },
+        issuetype: { id: this.taskType.id },
       }
     };
 
@@ -102,11 +102,12 @@ class JSpam {
   {
     const body = {
       "outwardIssue": {
-        "key": outward.key,
+        "key": outward.data.key,
       },
       "inwardIssue": {
-        "key": inward.key,
+        "key": inward.data.key,
       },
+      "type": this.relatesLink,
     };
 
     return axios.post(`${this.jira}/rest/api/2/issueLink`, body, {
@@ -181,9 +182,9 @@ class JSpam {
       this.relatesLink = this.linkTypes.data.issueLinkTypes.find(link => link.name === 'Relates');
 
       // get ticket from Jira
-      const link = await axios.get(`${this.jira}/rest/api/2/issue/${argv.link}`)
+      const link = await axios.get(`${this.jira}/rest/api/2/issue/${this.argv.link}`)
 
-      // parse package.json file
+      // map dependencies from @folio/some-app to ui-some-app
       const contents = JSON.parse(fs.readFileSync(this.argv.package, { encoding: 'UTF-8'}));
       const deps = Object.keys(contents.dependencies)
         .filter(p => p.startsWith('@folio/'))
@@ -192,15 +193,21 @@ class JSpam {
       // get projects from JIRA
       axios.get(`${this.jira}/rest/api/2/project`)
       .then(projects => {
+        // map the array of projects into a hash keyed by name, e.g. ui-some-app
         const pmap = {};
         projects.data.forEach(p => { pmap[p.name] = p; });
 
         this.eachPromise(deps, d => {
           if (pmap[d]) {
-            // this.createTicket(argv.summary, argv.description, pmap[d])
-            // .then(ticket => this.linkTicket(ticket, link));
-
-            console.log(`creating a ${d} ticket (${pmap[d].key} / ${pmap[d].id})`)
+            this.createTicket(this.argv.summary, this.argv.description, pmap[d])
+            .then(ticket => {
+              this.linkTicket(ticket, link);
+              console.log(`created ${ticket.data.key} (${d})`)
+            })
+            .catch(e => console.error(e.response.data));
+          }
+          else {
+            console.warn(`could not find a jira project matching ${d}`);
           }
         });
       })
