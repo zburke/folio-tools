@@ -2,7 +2,7 @@
   "name": "jspam",
   "version": "1.0.0",
   "description": "create jira tickets in many projects",
-  "main": "index.js",
+  "main": "jspam.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
