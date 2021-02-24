@@ -204,8 +204,15 @@ class JSpam {
       // map dependencies from @folio/some-app to ui-some-app
       const contents = JSON.parse(fs.readFileSync(this.argv.package, { encoding: 'UTF-8'}));
       const deps = Object.keys(contents.dependencies)
-        .filter(p => p.startsWith('@folio/'))
-        .map(p => `ui-${p.substring(p.indexOf('/') + 1 )}`);
+        .map(p => {
+          if (p.startsWith('@folio')) {
+            return `ui-${p.substring(p.indexOf('/') + 1)}`;
+          }
+          if (p.startsWith('@okapi')) {
+            return p.substring(p.indexOf('/') + 1);
+          }
+        })
+        .filter(Boolean);
 
       // get projects from JIRA
       axios.get(`${this.jira}/rest/api/2/project`)
