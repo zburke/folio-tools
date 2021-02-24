@@ -2,9 +2,10 @@
 
 ## details
 
-Given a summary, description, JIRA ticket, and the path to a `package.json`
+Given a summary and description, and the path to a `package.json`
 file, create matching JIRA tickets for all `@folio/...` modules all linked
-to the given ticket.
+to the given ticket. Optionally link them to an existing ticket, existing
+epic, and add labels.
 
 JIRA username and password will be retrieved from the Mac OS keychain entry
 `jira-password`, if available; otherwise, they may be passed on the command
@@ -21,8 +22,10 @@ Options:
   -p, --password     password (jira password)
   -s, --summary      issue summary (title)                            [required]
   -d, --description  issue description                                [required]
-  -l, --link         jira issue[s] to link to                         [required]
       --package      path to a package.json file to parse             [required]
+  -l, --link         jira issue[s] to link to
+  -e, --epic         jira epic to link to
+      --label        jira labels to apply
   -h, --help         Show help                                         [boolean]
 ```
 
