@@ -83,7 +83,7 @@ class JSpam {
   }
 
 
-  createTicket(summary, description, project)
+  createTicket(summary, description, project, epic, labels)
   {
     const body = {
       "fields": {
@@ -93,6 +93,16 @@ class JSpam {
         issuetype: { id: this.taskType.id },
       }
     };
+
+    if (epic) {
+      body.fields.customfield_10002 = epic;
+    }
+
+    if (labels) {
+      body.fields.labels = labels;
+    }
+
+    console.log(body)
 
     return axios.post(`${this.jira}/rest/api/2/issue`, body, {
       auth: this.credentials,
@@ -138,9 +148,14 @@ class JSpam {
       .alias('l', 'link')
       .describe('l', 'jira issue[s] to link to')
 
+      .alias('e', 'epic')
+      .describe('e', 'jira epic to link to')
+
+      .describe('label', 'jira labels to apply')
+
       .describe('package', 'path to a package.json file to parse')
 
-      .demandOption(['s', 'd', 'l', 'package'])
+      .demandOption(['s', 'd', 'package'])
       .help('h')
       .alias('h', 'help')
       .argv;
@@ -175,6 +190,7 @@ class JSpam {
     //    --package ./path/to/some/package.json
     try {
       this.argv = this.parseArgv();
+
       this.credentials = await this.getCredentials(this.argv);
 
       this.types = await axios.get(`${this.jira}/rest/api/2/issuetype`);
@@ -184,7 +200,10 @@ class JSpam {
       this.relatesLink = this.linkTypes.data.issueLinkTypes.find(link => link.name === 'Relates');
 
       // get ticket from Jira
-      const link = await axios.get(`${this.jira}/rest/api/2/issue/${this.argv.link}`)
+      let link;
+      if (this.argv.link) {
+        link = await axios.get(`${this.jira}/rest/api/2/issue/${this.argv.link}`);
+      }
 
       // map dependencies from @folio/some-app to ui-some-app
       const contents = JSON.parse(fs.readFileSync(this.argv.package, { encoding: 'UTF-8'}));
@@ -201,9 +220,19 @@ class JSpam {
 
         this.eachPromise(deps, d => {
           if (pmap[d]) {
-            this.createTicket(this.argv.summary, this.argv.description, pmap[d])
+            this.createTicket(
+              this.argv.summary,
+              this.argv.description,
+              pmap[d],
+              this.argv.epic,
+              this.argv.label)
             .then(ticket => {
-              this.linkTicket(ticket, link);
+              if (link) {
+                this.linkTicket(ticket, link);
+              }
+              return ticket;
+            })
+            .then((ticket) => {
               console.log(`created ${ticket.data.key} (${d})`)
             })
             .catch(e => console.error(e.response.data));
