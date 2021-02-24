@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 const { exec } = require("child_process");
 const yargs = require('yargs/yargs')
 const { hideBin } = require('yargs/helpers')
@@ -101,8 +99,6 @@ class JSpam {
     if (labels) {
       body.fields.labels = labels;
     }
-
-    console.log(body)
 
     return axios.post(`${this.jira}/rest/api/2/issue`, body, {
       auth: this.credentials,
