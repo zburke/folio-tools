@@ -1,3 +1,2 @@
 #!/bin/sh
-
-node ./jspam.js $*
+node ./jspam.js "$@"
