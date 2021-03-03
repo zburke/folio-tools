@@ -140,8 +140,23 @@ JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
 
 echo "tagging release $GHTAG and pushing it to GitHub..."
 git tag $GHTAG
-git push
+git push -q
 git push --tags -q
+
+
+# create Jira version if it doesn't exist
+VERSIONS=`curl -s -q --location -X GET https://issues.folio.org/rest/api/2/project/$JIRA/versions`
+echo $VERSIONS | jq -r '.[].name ' | grep $TAG
+if [ ! "$?" = "0" ]; then
+    echo "Creating Jira version $TAG"
+    PROJECT_ID=`echo $VERSIONS | jq -r '.[].projectId' | uniq`
+    curl -s --location \
+        -X POST "https://issues.folio.org/rest/api/2/version" \
+        -H "content-type: application/json" \
+        -d "{\"projectId\": $PROJECT_ID, \"name\": \"$TAG\" }"
+else
+  echo "Jira version $TAG already exists!"
+fi
 
 # update fix-version for each ticket
 for ticket in $TICKETS; do
