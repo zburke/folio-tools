@@ -158,28 +158,38 @@ else
   echo "Jira version $TAG already exists!"
 fi
 
-# update fix-version for each ticket
+# update fix-version for each ticket where resolution is "Done"
 for ticket in $TICKETS; do
     NEW_VERSIONS=
-    OLD_VERSIONS=`curl -s --location -X GET https://issues.folio.org/rest/api/2/issue/$ticket -q | jq '.fields.fixVersions[] | .name '`
-    if [[ -n $OLD_VERSIONS ]]; then
-        for version in $OLD_VERSIONS; do
-            if [[ -z $NEW_VERSIONS ]]; then
-                NEW_VERSIONS="{\"name\": \"$TAG\"}";
-            else
-                NEW_VERSIONS="${NEW_VERSIONS}, {\"name\": \"$TAG\"}";
-            fi;
-        done
+    TICKET_JSON=`curl -s --location -X GET https://issues.folio.org/rest/api/2/issue/$ticket -q > ./$ticket`
+    RESOLUTION=`cat $ticket | jq -r '.fields.resolution.name '`
+    STATUS=`cat $ticket | jq -r '.fields.status.name '`
+
+    if [ "$RESOLUTION" = "Done" ] && [ "$STATUS" = "Closed" ]; then
+        OLD_VERSIONS=`cat $ticket | jq '.fields.fixVersions[] | .name '`
+        if [[ -n $OLD_VERSIONS ]]; then
+            for version in $OLD_VERSIONS; do
+                if [[ -z $NEW_VERSIONS ]]; then
+                    NEW_VERSIONS="{\"name\": \"$TAG\"}";
+                else
+                    NEW_VERSIONS="${NEW_VERSIONS}, {\"name\": \"$TAG\"}";
+                fi;
+            done
+        else
+            NEW_VERSIONS="{\"name\": \"$TAG\"}";
+        fi
+
+        curl -s --location \
+            -X PUT "https://issues.folio.org/rest/api/2/issue/$ticket" \
+            -H "content-type: application/json" \
+            -H "Authorization: Basic $JIRA_AUTH_HEADER" \
+            -d "{\"fields\": { \"fixVersions\": [$NEW_VERSIONS] } }"
+        echo "added $TAG to $ticket"
     else
-        NEW_VERSIONS="{\"name\": \"$TAG\"}";
+        echo "skipping $ticket; $RESOLUTION/$STATUS is not Done/Closed";
     fi
 
-    curl -s --location \
-        -X PUT "https://issues.folio.org/rest/api/2/issue/$ticket" \
-        -H "content-type: application/json" \
-        -H "Authorization: Basic $JIRA_AUTH_HEADER" \
-        -d "{\"fields\": { \"fixVersions\": [$NEW_VERSIONS] } }"
-    echo "added $TAG to $ticket"
+    if [ -f $ticket ]; then rm $ticket; fi;
 done;
 
 # trigger a jenkins build
