@@ -135,6 +135,10 @@ class JSpam {
   }
 
   /**
+   * teamForName
+   * provide a map from team-name (in the team-project responsibility matrix)
+   * to its ID in Jira.
+   *
    * astonishingly, custom-field value-lists are not accessible via the API
    * without admin-level access. I don't get it.
    * @param {*} name
@@ -145,29 +149,39 @@ class JSpam {
       "@cult": 10304,
       "Concorde": 10571,
       "Core functional team": 10302,
-      "Core: Functional": 10302,
+        "Prokopovych (Core: Functional)": 10302,
+        "Core: Functional": 10302,
       "Core: Platform": 10432,
+        "Core Platform": 10432,
       "EBSCO - FSE": 10307,
       "ERM Subgroup Dev Team": 10308,
+        "ERM Delivery": 10308,
+
       "Falcon": 11327,
       "Firebird": 10883,
+        "Firebird team": 10883,
       "Folijet": 10390,
+        "Folijet Team": 10390,
       "FOLIO DevOps": 10882,
       "Frontside": 10305,
       "Gulfstream": 10884,
       "Lehigh": 10388,
+        "NSIP(Lehigh)": 10388,
       "Leipzig": 10389,
       "Qulto": 10306,
       "Reporting": 11022,
       "Scanbit": 10903,
       "Scout": 11405,
       "Spitfire": 10420,
+        "Spitfire Team": 10420,
       "Stacks": 10303,
       "Stripes Force": 10421,
       "Thor": 10609,
       "Thunderjet": 10418,
+      "Thunderjet Team": 10418,
       "UNAM": 10309,
       "Vega": 10419,
+      "Vega Team": 10419,
       "仁者无敌 \"Benevolence\"": 10909,
       "None": 11025,
     };
