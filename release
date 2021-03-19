@@ -133,7 +133,7 @@ fi
 REPO=`git config remote.origin.url | sed -E 's/.*\/([^\/]+)\.git$/\1/'`
 
 # get JIRAs from commit headers between previous and current releases
-TICKETS=`git log --pretty=oneline ${HASH_FROM}..${HASH_TO} | cut -c42- | egrep ^$JIRA  | sed -E "s/^($JIRA\-[0-9]+).*/\1/g" | sort | uniq`
+TICKETS=`git log --pretty=oneline ${HASH_FROM}..${HASH_TO} | cut -c42- | egrep ^$JIRA\-[0-9]+ | sed -E "s/^($JIRA\-[0-9]+).*/\1/g" | sort | uniq`
 
 # base64 auth token for Jira
 JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
