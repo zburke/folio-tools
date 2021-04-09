@@ -153,6 +153,7 @@ if [ ! "$?" = "0" ]; then
     curl -s --location \
         -X POST "https://issues.folio.org/rest/api/2/version" \
         -H "content-type: application/json" \
+        -H "Authorization: Basic $JIRA_AUTH_HEADER" \
         -d "{\"projectId\": $PROJECT_ID, \"name\": \"$TAG\" }"
 else
   echo "Jira version $TAG already exists!"
