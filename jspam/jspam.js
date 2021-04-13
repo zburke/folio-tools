@@ -157,7 +157,6 @@ class JSpam {
       "EBSCO - FSE": 10307,
       "ERM Subgroup Dev Team": 10308,
         "ERM Delivery": 10308,
-
       "Falcon": 11327,
       "Firebird": 10883,
         "Firebird team": 10883,
@@ -179,10 +178,10 @@ class JSpam {
       "Stripes Force": 10421,
       "Thor": 10609,
       "Thunderjet": 10418,
-      "Thunderjet Team": 10418,
+        "Thunderjet Team": 10418,
       "UNAM": 10309,
       "Vega": 10419,
-      "Vega Team": 10419,
+        "Vega Team": 10419,
       "仁者无敌 \"Benevolence\"": 10909,
       "None": 11025,
     };
@@ -267,34 +266,65 @@ class JSpam {
     return yargs(hideBin(process.argv))
       .usage('Usage: $0 --summary <s> --description <d> --link <JIRA-123> --package <package.json>')
 
-      .alias('u', 'username')
-      .describe('u', 'username')
+      .option('s', {
+        alias: 'summary',
+        describe: 'issue summary (title)',
+        type: 'string',
+      })
 
-      .alias('p', 'password')
-      .describe('p', 'password')
+      .option('d', {
+        alias: 'description',
+        describe: 'issue description',
+        type: 'string',
+      })
 
-      .alias('s', 'summary')
-      .describe('s', 'issue summary (title)')
+      .option('p', {
+        alias: 'package',
+        describe: 'path to a package.json file to parse',
+        type: 'string',
+      })
 
-      .alias('d', 'description')
-      .describe('d', 'issue description')
+      .option('l', {
+        alias: 'link',
+        describe: 'jira issue[s] to link to',
+        type: 'string',
+      })
 
-      .describe('package', 'path to a package.json file to parse')
+      .option('e', {
+        alias: 'epic',
+        describe: 'jira epic to link to',
+        type: 'string',
+      })
 
-      .alias('l', 'link')
-      .describe('l', 'jira issue[s] to link to')
+      .option('label', {
+        describe: 'jira label[s] to apply',
+        type: 'string',
+      })
 
-      .alias('e', 'epic')
-      .describe('e', 'jira epic to link to')
+      .option('team', {
+        describe: 'assign tickets to teams per team-module-responsibility matrix',
+        type: 'boolean',
+      })
 
-      .describe('label', 'jira labels to apply')
+      .option('ccpo', {
+        describe: 'CC the product owner per team-module-responsibility matrix in the ticket description',
+        type: 'boolean',
+      })
 
-      .describe('team', 'assign tickets to teams per team-module-responsibility matrix')
+      .option('cctl', {
+        describe: 'CC the tech lead per team-module-responsibility matrix in the ticket description',
+        type: 'boolean',
+      })
 
-      .describe('ccpo', 'CC the product owner per team-module-responsibility matrix in the ticket description')
+      .option('username', {
+        describe: 'jira username',
+        type: 'string',
+      })
 
-      .describe('cctl', 'CC the tech lead per team-module-responsibility matrix in the ticket description')
-
+      .option('password', {
+        describe: 'jira password',
+        type: 'string',
+      })
 
       .demandOption(['s', 'd', 'package'])
       .help('h')
