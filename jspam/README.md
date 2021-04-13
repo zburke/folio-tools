@@ -2,7 +2,7 @@
 
 ## details
 
-Given a summary and description, and the path to a `package.json`
+Given a summary and description, and the path to a `package.json`-like
 file, create matching JIRA tickets for entries listed as dependencies
 that start with `@folio/...` or `@okapi/...`. Optionally:
 
@@ -29,7 +29,7 @@ Options:
       --package      path to a package.json file to parse             [required]
   -l, --link         jira issue[s] to link to
   -e, --epic         jira epic to link to
-      --label        jira labels to apply
+      --label        jira label[s] to apply
       --team         assign tickets to teams per team-module-responsibility
                      matrix
       --ccpo         CC the product owner per team-module-responsibility matrix
@@ -42,8 +42,20 @@ Options:
 ## sample output
 
 ```
+# contents of complete-package.json
+{
+  "dependencies": {
+    "@folio/agreements": ">=1.0.0",
+    "@folio/erm-comparisons": ">=1.0.0",
+    "@folio/plugin-find-user": ">=1.0.0",
+    "@folio/organizations": ">=1.0.0"
+  }
+}
+```
+
+```
 $ JDESC=$(cat ./elaborate-summary.txt)
-$ node ./jspam.js -s "Update stripes-cli to v2" -d "$JDESC" -l STCLI-169 --package ~/temp/platform-complete/package.json
+$ node ./jspam.js -s "Update stripes-cli to v2" -d "$JDESC" -l STCLI-169 --package ~/complete-package.json
 could not find a jira project matching ui-agreements
 could not find a jira project matching ui-erm-comparisons
 created UIPFU-38 (ui-plugin-find-user)
