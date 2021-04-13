@@ -22,20 +22,20 @@ line.
 jspam --summary <s> --description <d> --link <JIRA-123> --package <package.json>
 
 Options:
-  -u, --username     username
-  -p, --password     password
-  -s, --summary      issue summary (title)                            [required]
-  -d, --description  issue description                                [required]
-      --package      path to a package.json file to parse             [required]
-  -l, --link         jira issue[s] to link to
-  -e, --epic         jira epic to link to
-      --label        jira label[s] to apply
+  -s, --summary      issue summary (title)                   [string] [required]
+  -d, --description  issue description                       [string] [required]
+  -p, --package      path to a package.json file to parse    [string] [required]
+  -l, --link         jira issue[s] to link to                           [string]
+  -e, --epic         jira epic to link to                               [string]
+      --label        jira label[s] to apply                             [string]
       --team         assign tickets to teams per team-module-responsibility
-                     matrix
+                     matrix                                            [boolean]
       --ccpo         CC the product owner per team-module-responsibility matrix
-                     in the ticket description
+                     in the ticket description                         [boolean]
       --cctl         CC the tech lead per team-module-responsibility matrix in
-                     the ticket description
+                     the ticket description                            [boolean]
+      --username     jira username                                      [string]
+      --password     jira password                                      [string]
   -h, --help         Show help                                         [boolean]
 ```
 
