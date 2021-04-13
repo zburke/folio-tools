@@ -150,6 +150,7 @@ class JSpam {
       "Concorde": 10571,
       "Core functional team": 10302,
         "Prokopovych (Core: Functional)": 10302,
+        "Prokopovych (Core functional) team": 10302,
         "Core: Functional": 10302,
       "Core: Platform": 10432,
         "Core Platform": 10432,
@@ -348,11 +349,15 @@ class JSpam {
       }
 
       // map dependencies:
+      // @folio/stripes-lib => stripes-lib
       // @folio/some-app => ui-some-app
       // @okapi/some-app => some-app
       const contents = JSON.parse(fs.readFileSync(this.argv.package, { encoding: 'UTF-8'}));
       const deps = Object.keys(contents.dependencies)
         .map(p => {
+          if (p.startsWith('@folio/stripes-')) {
+            return p.substring(p.indexOf('/') + 1);
+          }
           if (p.startsWith('@folio')) {
             return `ui-${p.substring(p.indexOf('/') + 1)}`;
           }
