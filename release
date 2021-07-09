@@ -86,9 +86,9 @@ if [ ! "$NPM_VERSION" = "$TAG" ]; then
 fi
 
 # validate optional arguments
-# hash-from defaults to the last tag if not specified
+# hash-from defaults to the last tag on the current branch, if not specified
 if [[ -z $HASH_FROM ]]; then
-    HASH_FROM=`git tag -l | tail -1`
+    HASH_FROM=`git tag -l --merged HEAD | tail -1`
 fi
 
 if [ ! git show $HASH_FROM > /dev/null 2>&1 ]; then
@@ -146,7 +146,7 @@ git push --tags -q
 
 # create Jira version if it doesn't exist
 VERSIONS=`curl -s -q --location -X GET https://issues.folio.org/rest/api/2/project/$JIRA/versions`
-echo $VERSIONS | jq -r '.[].name ' | grep $TAG
+echo $VERSIONS | jq -r '.[].name ' | grep -q $TAG
 if [ ! "$?" = "0" ]; then
     echo "Creating Jira version $TAG"
     PROJECT_ID=`echo $VERSIONS | jq -r '.[].projectId' | uniq`
@@ -161,23 +161,17 @@ fi
 
 # update fix-version for each ticket where resolution is "Done"
 for ticket in $TICKETS; do
-    NEW_VERSIONS=
+    NEW_VERSIONS="{\"name\": \"$TAG\"}";
     TICKET_JSON=`curl -s --location -X GET https://issues.folio.org/rest/api/2/issue/$ticket -q > ./$ticket`
     RESOLUTION=`cat $ticket | jq -r '.fields.resolution.name '`
     STATUS=`cat $ticket | jq -r '.fields.status.name '`
 
-    if [ "$RESOLUTION" = "Done" ] && [ "$STATUS" = "Closed" ]; then
-        OLD_VERSIONS=`cat $ticket | jq '.fields.fixVersions[] | .name '`
+    if [[ "$RESOLUTION" == "Done" && ( "$STATUS" == "Closed" || "$STATUS" == "Awaiting release" ) ]]; then
+        OLD_VERSIONS=`cat $ticket | jq -r '.fields.fixVersions[] | .name '`
         if [[ -n $OLD_VERSIONS ]]; then
             for version in $OLD_VERSIONS; do
-                if [[ -z $NEW_VERSIONS ]]; then
-                    NEW_VERSIONS="{\"name\": \"$TAG\"}";
-                else
-                    NEW_VERSIONS="${NEW_VERSIONS}, {\"name\": \"$TAG\"}";
-                fi;
+                NEW_VERSIONS="${NEW_VERSIONS}, {\"name\": \"$version\"}";
             done
-        else
-            NEW_VERSIONS="{\"name\": \"$TAG\"}";
         fi
 
         curl -s --location \
