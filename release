@@ -139,13 +139,13 @@ TICKETS=`git log --pretty=oneline ${HASH_FROM}..${HASH_TO} | cut -c42- | egrep ^
 JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
 
 echo "tagging release $GHTAG and pushing it to GitHub..."
-git tag $GHTAG
+git tag -a $GHTAG
 git push -q
 git push --tags -q
 
 
 # create Jira version if it doesn't exist
-VERSIONS=`curl -s -q --location -X GET https://issues.folio.org/rest/api/2/project/$JIRA/versions`
+VERSIONS=`curl -s --location -X GET https://issues.folio.org/rest/api/2/project/$JIRA/versions`
 echo $VERSIONS | jq -r '.[].name ' | grep -q $TAG
 if [ ! "$?" = "0" ]; then
     echo "Creating Jira version $TAG"
@@ -154,7 +154,7 @@ if [ ! "$?" = "0" ]; then
         -X POST "https://issues.folio.org/rest/api/2/version" \
         -H "content-type: application/json" \
         -H "Authorization: Basic $JIRA_AUTH_HEADER" \
-        -d "{\"projectId\": $PROJECT_ID, \"name\": \"$TAG\" }"
+        -d "{\"projectId\": $PROJECT_ID, \"name\": \"$TAG\" }" > /dev/null
 else
   echo "Jira version $TAG already exists!"
 fi
@@ -162,7 +162,7 @@ fi
 # update fix-version for each ticket where resolution is "Done"
 for ticket in $TICKETS; do
     NEW_VERSIONS="{\"name\": \"$TAG\"}";
-    TICKET_JSON=`curl -s --location -X GET https://issues.folio.org/rest/api/2/issue/$ticket -q > ./$ticket`
+    TICKET_JSON=`curl -s --location -X GET https://issues.folio.org/rest/api/2/issue/$ticket > ./$ticket`
     RESOLUTION=`cat $ticket | jq -r '.fields.resolution.name '`
     STATUS=`cat $ticket | jq -r '.fields.status.name '`
 
