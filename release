@@ -139,7 +139,7 @@ TICKETS=`git log --pretty=oneline ${HASH_FROM}..${HASH_TO} | cut -c42- | egrep ^
 JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
 
 echo "tagging release $GHTAG and pushing it to GitHub..."
-git tag -a $GHTAG
+git tag -a $GHTAG -m "Release $GHTAG"
 git push -q
 git push --tags -q
 
