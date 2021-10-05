@@ -1,0 +1,6 @@
+#!/bin/sh
+
+git clone git@github.com:folio-org/platform-complete.git
+git -C platform-complete checkout snapshot
+
+for m in `egrep '^\s+"@folio' ./platform-complete/package.json | cut -d\" -f 2 | sed -e 's/@folio\///' | grep -v stripes`; do git clone git@github.com:folio-org/ui-$m; done;
