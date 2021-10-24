@@ -88,7 +88,7 @@ fi
 # validate optional arguments
 # hash-from defaults to the last tag on the current branch, if not specified
 if [[ -z $HASH_FROM ]]; then
-    HASH_FROM=`git tag -l --merged HEAD | tail -1`
+    HASH_FROM=`git tag -l --merged HEAD --sort=creatordate | tail -1`
 fi
 
 if [ ! git show $HASH_FROM > /dev/null 2>&1 ]; then
