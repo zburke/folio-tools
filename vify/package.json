@@ -1,0 +1,16 @@
+{
+  "name": "vify",
+  "version": "1.0.0",
+  "description": "publish forked platform-complete to vercel with current app-branch",
+  "main": "vify.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@octokit/rest": "^18.12.0",
+    "simple-git": "^2.48.0"
+  }
+}
