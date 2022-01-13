@@ -36,28 +36,28 @@ https://platform-complete-git-abc-24601-javert.vercel.app
 
 ## one-time setup
 
-* get clone this repo and `yarn` or `npm i` to install its dependencies.
-* in GitHub, fork folio-org/platform-complete.
-* in GitHub > Settings > Developer settings, create a new personal access
+- get clone this repo and `yarn` or `npm i` to install its dependencies.
+- in GitHub, fork folio-org/platform-complete.
+- in GitHub > Settings > Developer settings, create a new personal access
   token. Paste it into `vify.js`, along with your GitHub username.
-* in Vercel > Settings > Login Connections, connect to GitHub.
-* in Vercel, create a new project importing the fork above, and configure it:
-** Build & Development Settings
-*** framework preset: Other
-*** build command (override):
-```
-yarn stripes build stripes.config.js output --tenant diku --okapi https://folio-snapshot-okapi.dev.folio.org
-```
-*** output directory (override):
-```
-output
-```
-*** install command (override):
-```
-yarn install
-```
-** Root Directory
-*** Tick the box for "Include source files outside of the Root Directory in the Build Step."
+- in Vercel > Settings > Login Connections, connect to GitHub.
+- in Vercel, create a new project importing the fork above, and configure it:
+  - Build & Development Settings
+    - framework preset: Other
+    - build command (override):
+      ```
+      yarn stripes build stripes.config.js output --tenant diku --okapi https://folio-snapshot-okapi.dev.folio.org
+      ```
+    - output directory (override):
+      ```
+      output
+      ```
+    - install command (override):
+      ```
+      yarn install
+      ```
+  - Root Directory
+    - Tick the box for "Include source files outside of the Root Directory in the Build Step."
 
 ## sample output
 
