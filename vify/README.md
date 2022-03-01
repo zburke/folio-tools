@@ -21,6 +21,9 @@ git push -u origin head
 ```
 ### actual usage
 
+From the directory above where a project is cloned and
+checked out to a branch that has been pushed:
+
 ```
 node path/to/vify.js
 ```
@@ -46,7 +49,7 @@ https://platform-complete-git-abc-24601-javert.vercel.app
     - framework preset: Other
     - build command (override):
       ```
-      yarn stripes build stripes.config.js output --tenant diku --okapi https://folio-snapshot-okapi.dev.folio.org
+      yarn stripes build stripes.config.js output 
       ```
     - output directory (override):
       ```
