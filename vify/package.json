@@ -11,6 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "@octokit/rest": "^18.12.0",
-    "simple-git": "^2.48.0"
+    "simple-git": "^3.3.0"
   }
 }
