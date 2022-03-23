@@ -171,4 +171,16 @@ for ticket in $TICKETS; do
     if [ -f $ticket ]; then rm $ticket; fi;
 done;
 
+# mark jira version as "released"
+echo "Releasing Jira version $TAG"
+RELEASE_DATE=`date +%Y-%m-%d`
+JIRA_VERSION=`echo $VERSIONS | jq -c ".[] | select(.name == \"$TAG\") | .released = true | .releaseDate = \"$RELEASE_DATE\" | del(.userReleaseDate) "  | sed 's/\"/\\"/g'`
+JIRA_VERSION_URL=`echo $VERSIONS | jq -c ".[] | select(.name == \"$TAG\") | .self"`
+curl -s --location \
+    -X PUT $JIRA_VERSION_URL \
+    -H "content-type: application/json" \
+    -H "Authorization: Basic $JIRA_AUTH_HEADER" \
+    -d "$JIRA_VERSION" > /dev/null
+
+
 echo 'done!'
