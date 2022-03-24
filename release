@@ -117,7 +117,7 @@ fi
 REPO=`git config remote.origin.url | sed -E 's/.*\/([^\/]+)\.git$/\1/'`
 
 # get JIRAs from commit headers between previous and current releases
-TICKETS=`git log --pretty=oneline ${HASH_FROM}..${HASH_TO} | cut -c42- | egrep ^$JIRA\-[0-9]+ | sed -E "s/^($JIRA\-[0-9]+).*/\1/g" | sort | uniq`
+TICKETS=`git log --pretty=oneline ${HASH_FROM}..${HASH_TO} | cut -c42- | egrep "^$JIRA\-[0-9]+" | sed -E "s/^($JIRA\-[0-9]+).*/\1/g" | sort | uniq`
 
 # base64 auth token for Jira
 JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
@@ -174,6 +174,9 @@ done;
 # mark jira version as "released"
 echo "Releasing Jira version $TAG"
 RELEASE_DATE=`date +%Y-%m-%d`
+# re-retrieve versions; if this version was just created then it isn't
+# included in the original response.
+VERSIONS=`curl -s --location -X GET https://issues.folio.org/rest/api/2/project/$JIRA/versions`
 JIRA_VERSION=`echo $VERSIONS | jq -c ".[] | select(.name == \"$TAG\") | .released = true | .releaseDate = \"$RELEASE_DATE\" | del(.userReleaseDate) "  | sed 's/\"/\\"/g'`
 JIRA_VERSION_URL=`echo $VERSIONS | jq -c ".[] | select(.name == \"$TAG\") | .self"`
 curl -s --location \
