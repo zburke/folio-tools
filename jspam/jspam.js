@@ -91,23 +91,34 @@ class JSpam {
   {
     const modules = {};
     const matrix = (await axios.get(matrixUrl)).data;
-    // const matrix = fs.readFileSync('Team vs module responsibility matrix', { encoding: 'UTF-8' });
+    // const matrix = fs.readFileSync('Team vs module responsibility matrix - Releases - FOLIO Wiki.html', { encoding: 'UTF-8' });
 
     const userFromTd = (td) => {
-      return td.querySelector ? td.querySelector('a')?.getAttribute('data-username') : null;
+      return td.querySelector ? td.querySelector('a')?.getAttribute('data-username')?.trim() : null;
     }
 
-    const ths = parse(matrix).querySelectorAll('.confluenceTable tbody tr.tableenhancer-fixed-row td');
+    const ths = Array.from(parse(matrix).querySelectorAll('.confluenceTable tbody tr:nth-child(1) td'));
 
     const teams = parse(matrix).querySelectorAll('.confluenceTable tbody tr');
     let pteam = { team: '', po: '', tl: '', github: '', jira: '' };
     teams.forEach((tr, i) => {
+
       const tds = Array.from(tr.querySelectorAll('td'));
-      if (tds.length === ths.length - 1) {
-        tds.unshift({ text: '' });
-      }
-      else if (tds.length === ths.length - 2) {
-        tds.unshift({ text: '' });
+
+      // in a table like this:
+      //   | th-1 | th-2 | th-3 |
+      //   |      |------|------|
+      //   |      | r1c2 | r1c3 |
+      //   |      |      |------|
+      //   |      |      | r2c3 |
+      // r2c3 will come through as r2c1 so we need to pad it on the left
+      // so it can be parsed as c3.
+      const tdStyle = tds[0].rawAttributes.style;
+      for (let i = 0; i < ths.length; i++) {
+        if (ths[i].rawAttributes.style === tdStyle) {
+          break;
+        }
+
         tds.unshift({ text: '' });
       }
 
@@ -115,13 +126,12 @@ class JSpam {
       // I don't really know what kind of data structure `tds` is.
       // iterating with (td, j) works just fine, but trying to access tds[j] fails.
       tds.forEach((td, j) => {
-        if (j == 0) team.team = td.text.trim() || pteam.team.trim();
+        if (j == 0) team.team = (td.text.trim() || pteam.team.trim()).split(/\n/)[0].trim();
         if (j == 1) team.po = userFromTd(td) || pteam.po;
         if (j == 2) team.tl = userFromTd(td) || pteam.tl;
-        if (j == 4) team.github = td.text;
-        if (j == 5) team.jira = td.text;
+        if (j == 4) team.github = td.text?.trim();
+        if (j == 5) team.jira = td.text?.trim();
       });
-
 
       if (team.github) {
         modules[team.github] = team;
