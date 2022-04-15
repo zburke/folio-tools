@@ -97,29 +97,23 @@ class JSpam {
       return td.querySelector ? td.querySelector('a')?.getAttribute('data-username')?.trim() : null;
     }
 
+    // there are only 12 columns if you count it yourself,
+    // but somehow ths.length calculates to 14. I don't get it.
+    // in order for the padding to work out, we need the real count (12),
+    // not the fantasy count (14).
+    const tdLength = 12;
     const ths = Array.from(parse(matrix).querySelectorAll('.confluenceTable tbody tr:nth-child(1) td'));
-
     const teams = parse(matrix).querySelectorAll('.confluenceTable tbody tr');
     let pteam = { team: '', po: '', tl: '', github: '', jira: '' };
-    teams.forEach((tr, i) => {
 
+    teams.forEach((tr, i) => {
       const tds = Array.from(tr.querySelectorAll('td'));
 
-      // in a table like this:
-      //   | th-1 | th-2 | th-3 |
-      //   |      |------|------|
-      //   |      | r1c2 | r1c3 |
-      //   |      |      |------|
-      //   |      |      | r2c3 |
-      // r2c3 will come through as r2c1 so we need to pad it on the left
-      // so it can be parsed as c3.
-      const tdStyle = tds[0].rawAttributes.style;
-      for (let i = 0; i < ths.length; i++) {
-        if (ths[i].rawAttributes.style === tdStyle) {
-          break;
+      if (tds.length < tdLength) {
+        const diff = tdLength - tds.length;
+        for (let i = 0; i < diff; i++) {
+          tds.unshift({ text: '' });
         }
-
-        tds.unshift({ text: '' });
       }
 
       const team = { team: '', po: '', tl: '', github: '', jira: '' };
@@ -132,6 +126,8 @@ class JSpam {
         if (j == 4) team.github = td.text?.trim();
         if (j == 5) team.jira = td.text?.trim();
       });
+
+      // console.log(">>", tds.map((v,i) => i + ': ' + v.text?.trim() ).join(" | "))
 
       if (team.github) {
         modules[team.github] = team;
@@ -188,6 +184,7 @@ class JSpam {
         "Prokopovych (Core functional) team": 10302,
         "Core: Functional": 10302,
         "Prokopovych Team": 10302,
+        "Prokopovych team": 10302,
       "Qulto": 10306,
       "Reporting": 11022,
       "Scanbit": 10903,
@@ -428,7 +425,10 @@ class JSpam {
         projects.data.forEach(p => { pmap[p.name] = p; });
 
         this.eachPromise(deps, d => {
-          if (pmap[d]) {
+          // if (!pmap[d]) { console.log(`missing jira for ${d}`)}
+          // if (!this.matrix[d]) { console.log(`missing matrix for ${d}`)}
+
+          if (pmap[d] && this.matrix[d].team) {
             this.teamForName(this.matrix[d].team)
             .then(team => {
               // only assign the team if we received --team
@@ -466,7 +466,12 @@ class JSpam {
             });
           }
           else {
-            console.warn(`could not find a jira project matching ${d}`);
+            if (!pmap[d]) {
+              console.warn(`could not find a jira project matching ${d}`);
+            }
+            if (!this.matrix[d]) {
+              console.warn(`could not find a matrix entry matching ${d}`);
+            }
           }
         });
       })
