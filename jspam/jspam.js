@@ -90,8 +90,8 @@ class JSpam {
   async getMatrix(matrixUrl)
   {
     const modules = {};
-    const matrix = (await axios.get(matrixUrl)).data;
-    // const matrix = fs.readFileSync('Team vs module responsibility matrix - Releases - FOLIO Wiki.html', { encoding: 'UTF-8' });
+    // const matrix = (await axios.get(matrixUrl)).data;
+    const matrix = fs.readFileSync('Team vs module responsibility matrix - Releases - FOLIO Wiki.html', { encoding: 'UTF-8' });
 
     const userFromTd = (td) => {
       return td.querySelector ? td.querySelector('a')?.getAttribute('data-username')?.trim() : null;
