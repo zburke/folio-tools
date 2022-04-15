@@ -91,13 +91,13 @@ class JSpam {
   {
     const modules = {};
     const matrix = (await axios.get(matrixUrl)).data;
-    // const matrix = fs.readFileSync('Team+vs+module+responsibility+matrix', { encoding: 'UTF-8' });
+    // const matrix = fs.readFileSync('Team vs module responsibility matrix', { encoding: 'UTF-8' });
 
     const userFromTd = (td) => {
       return td.querySelector ? td.querySelector('a')?.getAttribute('data-username') : null;
     }
 
-    const ths = parse(matrix).querySelectorAll('.confluenceTable tbody th');
+    const ths = parse(matrix).querySelectorAll('.confluenceTable tbody tr.tableenhancer-fixed-row td');
 
     const teams = parse(matrix).querySelectorAll('.confluenceTable tbody tr');
     let pteam = { team: '', po: '', tl: '', github: '', jira: '' };
@@ -115,12 +115,13 @@ class JSpam {
       // I don't really know what kind of data structure `tds` is.
       // iterating with (td, j) works just fine, but trying to access tds[j] fails.
       tds.forEach((td, j) => {
-        if (j == 0) team.team = td.text || pteam.team;
+        if (j == 0) team.team = td.text.trim() || pteam.team.trim();
         if (j == 1) team.po = userFromTd(td) || pteam.po;
         if (j == 2) team.tl = userFromTd(td) || pteam.tl;
         if (j == 4) team.github = td.text;
         if (j == 5) team.jira = td.text;
       });
+
 
       if (team.github) {
         modules[team.github] = team;
@@ -147,33 +148,44 @@ class JSpam {
   {
     const teams = {
       "@cult": 10304,
+      "Bama": 12226,
+      "Bienenvolk": 10308,
       "Concorde": 10571,
-      "Core functional team": 10302,
-        "Prokopovych (Core: Functional)": 10302,
-        "Prokopovych (Core functional) team": 10302,
-        "Core: Functional": 10302,
       "Core: Platform": 10432,
         "Core Platform": 10432,
       "EBSCO - FSE": 10307,
+      "ERM": 12221,
       "ERM Subgroup Dev Team": 10308,
         "ERM Delivery": 10308,
+        "Bienenvolk": 10308,
       "Falcon": 11327,
       "Firebird": 10883,
         "Firebird team": 10883,
       "Folijet": 10390,
         "Folijet Team": 10390,
+      "Folijet Support": 12101,
       "FOLIO DevOps": 10882,
       "Frontside": 10305,
       "Gulfstream": 10884,
+      "K-Int": 12269,
+      "Kitfox": 12001,
       "Lehigh": 10388,
         "NSIP(Lehigh)": 10388,
       "Leipzig": 10389,
+      "Prokopovych": 10302,
+        "Core functional team": 10302,
+        "Prokopovych (Core: Functional)": 10302,
+        "Prokopovych (Core functional) team": 10302,
+        "Core: Functional": 10302,
+        "Prokopovych Team": 10302,
       "Qulto": 10306,
       "Reporting": 11022,
       "Scanbit": 10903,
       "Scout": 11405,
+      "Sif": 12228,
       "Spitfire": 10420,
         "Spitfire Team": 10420,
+      "Spring Force": 11814,
       "Stacks": 10303,
       "Stripes Force": 10421,
       "Thor": 10609,
@@ -182,6 +194,7 @@ class JSpam {
       "UNAM": 10309,
       "Vega": 10419,
         "Vega Team": 10419,
+      "Volaris": 11807,
       "仁者无敌 \"Benevolence\"": 10909,
       "None": 11025,
     };
