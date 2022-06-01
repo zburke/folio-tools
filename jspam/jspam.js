@@ -4,6 +4,7 @@ const { hideBin } = require('yargs/helpers')
 const axios = require("axios");
 const fs = require('fs');
 const { parse } = require('node-html-parser');
+const { exit } = require("process");
 
 /**
  * Create tickets for all jira projects associated with packages in
@@ -90,11 +91,15 @@ class JSpam {
   async getMatrix(matrixUrl)
   {
     const modules = {};
-    // const matrix = (await axios.get(matrixUrl)).data;
-    const matrix = fs.readFileSync('Team vs module responsibility matrix - Releases - FOLIO Wiki.html', { encoding: 'UTF-8' });
+    const matrix = (await axios.get(matrixUrl)).data;
+    // const matrix = fs.readFileSync('Team vs module responsibility matrix - Releases - FOLIO Wiki.html', { encoding: 'UTF-8' });
 
     const userFromTd = (td) => {
-      return td.querySelector ? td.querySelector('a')?.getAttribute('data-username')?.trim() : null;
+      let name = td.querySelector ? td.querySelector('a')?.getAttribute('data-username')?.trim() : null;
+      if (name) {
+        name = name.replace(/\s+/g, ' ');
+      }
+      return name;
     }
 
     const ths = Array.from(parse(matrix).querySelectorAll('.confluenceTable tbody tr:nth-child(1) td'));
@@ -102,25 +107,41 @@ class JSpam {
     const teams = parse(matrix).querySelectorAll('.confluenceTable tbody tr');
     let pteam = { team: '', po: '', tl: '', github: '', jira: '' };
     teams.forEach((tr, i) => {
-
       const tds = Array.from(tr.querySelectorAll('td'));
-
       // in a table like this:
       //   | th-1 | th-2 | th-3 |
-      //   |      |------|------|
+      //   |------|------|------|
       //   |      | r1c2 | r1c3 |
       //   |      |      |------|
       //   |      |      | r2c3 |
       // r2c3 will come through as r2c1 so we need to pad it on the left
       // so it can be parsed as c3.
+
+      // table is expected to be 12 cells wide, but it's constantly changing.
+      // typically only the leading cells span multiple rows, which means we
+      // can reliable just pad from the front.
+      //
+      // there have been so many different incarnations of this code as the
+      // table goes through subtle changes. it used to be possible to rely
+      // on cell style attributes and weird hard-coded widths, but not all
+      // cells have those attributes, etc. etc. it's always something.
+      const cellCount = 12;
+      const diff = cellCount - tds.length;
+      for (let j = 0; j < diff; j++) {
+        tds.unshift({ text: '' });
+      }
+
+      /*
       const tdStyle = tds[0].rawAttributes.style;
-      for (let i = 0; i < ths.length; i++) {
-        if (ths[i].rawAttributes.style === tdStyle) {
+      for (let j = 0; j < ths.length; j++) {
+        if (ths[j].rawAttributes.style === tdStyle) {
+          console.log(`broke / ${j}`)
           break;
         }
 
         tds.unshift({ text: '' });
       }
+      */
 
       const team = { team: '', po: '', tl: '', github: '', jira: '' };
       // I don't really know what kind of data structure `tds` is.
@@ -188,6 +209,7 @@ class JSpam {
         "Prokopovych (Core functional) team": 10302,
         "Core: Functional": 10302,
         "Prokopovych Team": 10302,
+        "Prokopovych team": 10302,
       "Qulto": 10306,
       "Reporting": 11022,
       "Scanbit": 10903,
@@ -427,6 +449,19 @@ class JSpam {
         const pmap = {};
         projects.data.forEach(p => { pmap[p.name] = p; });
 
+        // stupidass ERM projects think they're special
+        // ERM projects don't exist individually in Jira, but they do in the matrix.
+        // So: if there isn't a Jira entry given the project by name,
+        // see if there's an entry for the project by its "jira" attribute.
+        Object.values(this.matrix).forEach(matrixProject => {
+          if (matrixProject.github && !pmap[matrixProject.github]) {
+            const p = Object.values(pmap).find(project => project.key === matrixProject.jira);
+            if (p) {
+              pmap[matrixProject.github] = p;
+            }
+          }
+        });
+
         this.eachPromise(deps, d => {
           if (pmap[d]) {
             this.teamForName(this.matrix[d].team)
@@ -464,6 +499,7 @@ class JSpam {
             .catch(e => {
               console.error(e.response ?? e);
             });
+
           }
           else {
             console.warn(`could not find a jira project matching ${d}`);
