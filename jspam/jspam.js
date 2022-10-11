@@ -119,13 +119,13 @@ class JSpam {
 
       // table is expected to be 12 cells wide, but it's constantly changing.
       // typically only the leading cells span multiple rows, which means we
-      // can reliable just pad from the front.
+      // can reliably just pad from the front.
       //
       // there have been so many different incarnations of this code as the
       // table goes through subtle changes. it used to be possible to rely
       // on cell style attributes and weird hard-coded widths, but not all
       // cells have those attributes, etc. etc. it's always something.
-      const cellCount = 12;
+      const cellCount = 13;
       const diff = cellCount - tds.length;
       for (let j = 0; j < diff; j++) {
         tds.unshift({ text: '' });
@@ -463,7 +463,7 @@ class JSpam {
         });
 
         this.eachPromise(deps, d => {
-          if (pmap[d]) {
+          if (pmap[d] && this.matrix[d]) {
             this.teamForName(this.matrix[d].team)
             .then(team => {
               // only assign the team if we received --team
@@ -499,10 +499,9 @@ class JSpam {
             .catch(e => {
               console.error(e.response ?? e);
             });
-
           }
           else {
-            console.warn(`could not find a jira project matching ${d}`);
+            console.warn(`could not find a jira project or matrix entry matching >>${d}<<`);
           }
         });
       })
