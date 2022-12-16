@@ -189,6 +189,7 @@ class JSpam {
       "ERM Subgroup Dev Team": 10308,
         "ERM Delivery": 10308,
         "Bienenvolk": 10308,
+        "Bienenvolk (fka ERM Delivery)": 10308,
       "Falcon": 11327,
       "Firebird": 10883,
         "Firebird team": 10883,
