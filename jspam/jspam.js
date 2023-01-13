@@ -125,7 +125,7 @@ class JSpam {
       // table goes through subtle changes. it used to be possible to rely
       // on cell style attributes and weird hard-coded widths, but not all
       // cells have those attributes, etc. etc. it's always something.
-      const cellCount = 13;
+      const cellCount = 14;
       const diff = cellCount - tds.length;
       for (let j = 0; j < diff; j++) {
         tds.unshift({ text: '' });
