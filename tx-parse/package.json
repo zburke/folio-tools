@@ -1,0 +1,14 @@
+{
+  "name": "tx-parse",
+  "version": "1.0.0",
+  "description": "calculate completeness of translations in current repo by comparison to en_US",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "lodash": "^4.17.21"
+  }
+}
