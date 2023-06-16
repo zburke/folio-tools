@@ -1,10 +1,10 @@
-const { exec } = require("child_process");
-const yargs = require('yargs/yargs')
-const { hideBin } = require('yargs/helpers')
-const axios = require("axios");
-const fs = require('fs');
-const { parse } = require('node-html-parser');
-const { exit } = require("process");
+import { exec } from 'child_process';
+import yargs from 'yargs/yargs';
+import { hideBin } from 'yargs/helpers';
+import axios from 'axios';
+import fs from 'fs';
+import { parse } from 'node-html-parser';
+import { exit } from 'process';
 
 /**
  * Create tickets for all jira projects associated with packages in
@@ -92,7 +92,7 @@ class JSpam {
   {
     const modules = {};
     const matrix = (await axios.get(matrixUrl)).data;
-    // const matrix = fs.readFileSync('Team vs module responsibility matrix - Releases - FOLIO Wiki.html', { encoding: 'UTF-8' });
+    // const matrix = fs.readFileSync('/Users/zburke/Downloads/matrix.html', { encoding: 'UTF-8' });
 
     const userFromTd = (td) => {
       let name = td.querySelector ? td.querySelector('a')?.getAttribute('data-username')?.trim() : null;
@@ -102,65 +102,25 @@ class JSpam {
       return name;
     }
 
-    const ths = Array.from(parse(matrix).querySelectorAll('.confluenceTable tbody tr:nth-child(1) td'));
-
-    const teams = parse(matrix).querySelectorAll('.confluenceTable tbody tr');
-    let pteam = { team: '', po: '', tl: '', github: '', jira: '' };
-    teams.forEach((tr, i) => {
+    const container = parse(matrix).querySelector('.confluenceTable');
+    const rows = Array.from(container.querySelectorAll('tbody tr'));
+    rows.forEach((tr, i) => {
       const tds = Array.from(tr.querySelectorAll('td'));
-      // in a table like this:
-      //   | th-1 | th-2 | th-3 |
-      //   |------|------|------|
-      //   |      | r1c2 | r1c3 |
-      //   |      |      |------|
-      //   |      |      | r2c3 |
-      // r2c3 will come through as r2c1 so we need to pad it on the left
-      // so it can be parsed as c3.
-
-      // table is expected to be 12 cells wide, but it's constantly changing.
-      // typically only the leading cells span multiple rows, which means we
-      // can reliably just pad from the front.
-      //
-      // there have been so many different incarnations of this code as the
-      // table goes through subtle changes. it used to be possible to rely
-      // on cell style attributes and weird hard-coded widths, but not all
-      // cells have those attributes, etc. etc. it's always something.
-      const cellCount = 13;
-      const diff = cellCount - tds.length;
-      for (let j = 0; j < diff; j++) {
-        tds.unshift({ text: '' });
-      }
-
-      /*
-      const tdStyle = tds[0].rawAttributes.style;
-      for (let j = 0; j < ths.length; j++) {
-        if (ths[j].rawAttributes.style === tdStyle) {
-          console.log(`broke / ${j}`)
-          break;
-        }
-
-        tds.unshift({ text: '' });
-      }
-      */
-
       const team = { team: '', po: '', tl: '', github: '', jira: '' };
       // I don't really know what kind of data structure `tds` is.
       // iterating with (td, j) works just fine, but trying to access tds[j] fails.
       tds.forEach((td, j) => {
-        if (j == 0) team.team = (td.text.trim() || pteam.team.trim()).split(/\n/)[0].trim();
-        if (j == 1) team.po = userFromTd(td) || pteam.po;
-        if (j == 2) team.tl = userFromTd(td) || pteam.tl;
-        if (j == 4) team.github = td.text?.trim();
-        if (j == 5) team.jira = td.text?.trim();
+        if (j == 0) team.jira = td.text?.trim();
+        if (j == 1) team.team = (td.text?.trim()).split(/\n/)[0].trim();
+        if (j == 2) team.po = userFromTd(td);
+        if (j == 3) team.tl = userFromTd(td);
+        // there is no rule 4
+        if (j == 5) team.github = td.text?.trim();
       });
 
       if (team.github) {
         modules[team.github] = team;
       }
-
-      // cache current team to deal with rowspans, i.e. rows that inherit
-      // their first few fields from a parent row.
-      pteam = team;
     });
 
     return modules;
@@ -179,8 +139,11 @@ class JSpam {
   {
     const teams = {
       "@cult": 10304,
+      "AQA": 12272,
       "Bama": 12226,
       "Bienenvolk": 10308,
+        "Bienenvolk (fka ERM)": 10308,
+      "Citation": 12705,
       "Concorde": 10571,
       "Core: Platform": 10432,
         "Core Platform": 10432,
@@ -191,6 +154,7 @@ class JSpam {
         "Bienenvolk": 10308,
         "Bienenvolk (fka ERM Delivery)": 10308,
       "Falcon": 11327,
+      "FSE": 10307,
       "Firebird": 10883,
         "Firebird team": 10883,
       "Folijet": 10390,
@@ -204,6 +168,7 @@ class JSpam {
       "Lehigh": 10388,
         "NSIP(Lehigh)": 10388,
       "Leipzig": 10389,
+      "Mjolnir": 12602,
       "Prokopovych": 10302,
         "Core functional team": 10302,
         "Prokopovych (Core: Functional)": 10302,
@@ -213,9 +178,11 @@ class JSpam {
         "Prokopovych team": 10302,
       "Qulto": 10306,
       "Reporting": 11022,
+      "Reservoir Dogs": 12601,
       "Scanbit": 10903,
       "Scout": 11405,
       "Sif": 12228,
+      "Siphon": 12702,
       "Spitfire": 10420,
         "Spitfire Team": 10420,
       "Spring Force": 11814,
@@ -416,7 +383,7 @@ class JSpam {
       this.linkTypes = await axios.get(`${this.jira}/rest/api/2/issueLinkType`);
       this.relatesLink = this.linkTypes.data.issueLinkTypes.find(link => link.name === 'Relates');
 
-      this.matrix = await this.getMatrix('https://wiki.folio.org/display/REL/Team+vs+module+responsibility+matrix');
+      const matrix = await this.getMatrix('https://wiki.folio.org/pages/viewpage.action?pageId=14463134');
 
       // get ticket from Jira
       let link;
@@ -454,7 +421,7 @@ class JSpam {
         // ERM projects don't exist individually in Jira, but they do in the matrix.
         // So: if there isn't a Jira entry given the project by name,
         // see if there's an entry for the project by its "jira" attribute.
-        Object.values(this.matrix).forEach(matrixProject => {
+        Object.values(matrix).forEach(matrixProject => {
           if (matrixProject.github && !pmap[matrixProject.github]) {
             const p = Object.values(pmap).find(project => project.key === matrixProject.jira);
             if (p) {
@@ -464,18 +431,18 @@ class JSpam {
         });
 
         this.eachPromise(deps, d => {
-          if (pmap[d] && this.matrix[d]) {
-            this.teamForName(this.matrix[d].team)
+          if (pmap[d] && matrix[d]) {
+            this.teamForName(matrix[d].team)
             .then(team => {
               // only assign the team if we received --team
               const t = this.argv.team ? team : null;
               const cc = [];
-              if (this.argv.ccpo && this.matrix[d].po) {
-                cc.push(this.matrix[d].po)
+              if (this.argv.ccpo && matrix[d].po) {
+                cc.push(matrix[d].po)
               }
 
-              if (this.argv.cctl && this.matrix[d].tl) {
-                cc.push(this.matrix[d].tl)
+              if (this.argv.cctl && matrix[d].tl) {
+                cc.push(matrix[d].tl)
               }
 
               return this.createTicket({

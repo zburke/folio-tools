@@ -2,6 +2,7 @@
   "name": "jspam",
   "version": "1.0.0",
   "description": "create jira tickets in many projects",
+  "type": "module",
   "main": "jspam.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -9,8 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^0.21.2",
-    "node-html-parser": "^3.0.3",
-    "yargs": "^16.2.0"
+    "axios": "^1.4.0",
+    "node-html-parser": "^6.1.5",
+    "yargs": "^17.7.2"
   }
 }
