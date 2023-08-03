@@ -450,7 +450,7 @@ class JSpam {
                 description: this.argv.description,
                 project: pmap[d],
                 epic: this.argv.epic,
-                labels: this.argv.label,
+                labels: Array.isArray(this.argv.label) ? this.argv.label : [this.argv.label],
                 team: t,
                 cc: cc,
               })
