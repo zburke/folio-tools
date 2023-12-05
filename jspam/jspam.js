@@ -238,7 +238,11 @@ class JSpam {
     }
 
     if (labels) {
-      body.fields.labels = labels;
+      if (Array.isArray(labels)) {
+        body.fields.labels = labels;
+      } else {
+        body.fields.labels = [labels];
+      }
     }
 
     if (team) {
@@ -450,7 +454,7 @@ class JSpam {
                 description: this.argv.description,
                 project: pmap[d],
                 epic: this.argv.epic,
-                labels: Array.isArray(this.argv.label) ? this.argv.label : [this.argv.label],
+                labels: this.argv.label,
                 team: t,
                 cc: cc,
               })
