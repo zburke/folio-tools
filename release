@@ -12,10 +12,13 @@
 # start-commit defaults to the most recent tag, end-commit to tip-of-branch
 #
 # credentials for Jira are pulled from the MacOS keychain stored with the
-# service string "jira-password" including the username in the "account"
-# field, or from the environment variables JIRA_PASSWORD. Likewise, the
-# username can alternatively be found in the environment variables
-# JIRA_USERNAME or USER, if it is not found in any of the previous scopes.
+# service string "jira-apitoken". The JIRA email address must be stored in the
+# account field; the API token must be stored in the password field. Alternatively,
+# username may be stored in the environment variable JIRA_USERNAME or USER; API token
+# may be stored in the environment variable JIRA_APITOKEN.
+#
+# Generate an Atlassian API token at https://id.atlassian.com/manage-profile/security/api-tokens
+#
 
 
 quit()
@@ -31,7 +34,7 @@ quit()
 
 #
 # getAttr - retrieve attribute from MacOS security service
-# $1 service-name, e.g. jira-password
+# $1 service-name, e.g. jira-apitoken
 # $2 field, e.g. acct
 #
 getAttr()
@@ -42,7 +45,7 @@ getAttr()
 
 #
 # getPassword - retrieve password from MacOS security service
-# $1 service-name, e.g. jira-password
+# $1 service-name, e.g. jira-apitoken
 # $2 account, e.g. someusername
 #
 getPassword()
@@ -103,12 +106,12 @@ fi
 GHTAG="v$TAG" # release as tagged in git, e.g. v1.2.3
 
 # jira username from keychain, else $JIRA_USERNAME, else $USER
-JIRA_USER=`getAttr "jira-password" "acct"`
+JIRA_USER=`getAttr "jira-apitoken" "acct"`
 if [[ -z $JIRA_USER ]]; then JIRA_USER=$JIRA_USERNAME; fi
 if [[ -z $JIRA_USER ]]; then JIRA_USER=$USER; fi
 
-JIRA_PASS=`getPassword "jira-password" "$JIRA_USER"`
-if [[ -z $JIRA_PASS ]]; then JIRA_PASS=$JIRA_PASSWORD; fi
+JIRA_PASS=`getPassword "jira-apitoken" "$JIRA_USER"`
+if [[ -z $JIRA_PASS ]]; then JIRA_PASS=$JIRA_APITOKEN; fi
 if [[ -z $JIRA_USER || -z $JIRA_PASS ]]; then
     quit "could not find jira credentials"
 fi
@@ -129,16 +132,23 @@ git push --tags -q
 
 
 # create Jira version if it doesn't exist
-VERSIONS=`curl -s --location -X GET https://issues.folio.org/rest/api/2/project/$JIRA/versions`
+VERSIONS=`curl -s --location -X GET https://folio-org.atlassian.net/rest/api/2/project/$JIRA/versions`
 echo $VERSIONS | jq -r '.[].name ' | grep -q $TAG
 if [ ! "$?" = "0" ]; then
     echo "Creating Jira version $TAG"
     PROJECT_ID=`echo $VERSIONS | jq -r '.[].projectId' | uniq`
-    curl -s --location \
-        -X POST "https://issues.folio.org/rest/api/2/version" \
-        -H "content-type: application/json" \
+
+    curl --request POST \
+        --url 'https://folio-org.atlassian.net/rest/api/2/version' \
         -H "Authorization: Basic $JIRA_AUTH_HEADER" \
-        -d "{\"projectId\": $PROJECT_ID, \"name\": \"$TAG\" }" > /dev/null
+        --header 'Accept: application/json' \
+        --header 'Content-Type: application/json' \
+        --data "{
+            \"archived\": false,
+            \"description\": \"$TAG\",
+            \"name\": \"$TAG\",
+            \"projectId\": $PROJECT_ID
+        }" > /dev/null
 else
   echo "Jira version $TAG already exists!"
 fi
@@ -146,7 +156,7 @@ fi
 # update fix-version for each ticket where resolution is "Done"
 for ticket in $TICKETS; do
     NEW_VERSIONS="{\"name\": \"$TAG\"}";
-    TICKET_JSON=`curl -s --location -X GET https://issues.folio.org/rest/api/2/issue/$ticket > ./$ticket`
+    TICKET_JSON=`curl -s --location -X GET https://folio-org.atlassian.net/rest/api/2/issue/$ticket > ./$ticket`
     RESOLUTION=`cat $ticket | jq -r '.fields.resolution.name '`
     STATUS=`cat $ticket | jq -r '.fields.status.name '`
 
@@ -159,7 +169,7 @@ for ticket in $TICKETS; do
         fi
 
         curl -s --location \
-            -X PUT "https://issues.folio.org/rest/api/2/issue/$ticket" \
+            -X PUT "https://folio-org.atlassian.net/rest/api/2/issue/$ticket" \
             -H "content-type: application/json" \
             -H "Authorization: Basic $JIRA_AUTH_HEADER" \
             -d "{\"fields\": { \"fixVersions\": [$NEW_VERSIONS] } }"
@@ -171,12 +181,13 @@ for ticket in $TICKETS; do
     if [ -f $ticket ]; then rm $ticket; fi;
 done;
 
+
 # mark jira version as "released"
 echo "Releasing Jira version $TAG"
 RELEASE_DATE=`date +%Y-%m-%d`
 # re-retrieve versions; if this version was just created then it isn't
 # included in the original response.
-VERSIONS=`curl -s --location -X GET https://issues.folio.org/rest/api/2/project/$JIRA/versions`
+VERSIONS=`curl -s --location -X GET https://folio-org.atlassian.net/rest/api/2/project/$JIRA/versions`
 JIRA_VERSION=`echo $VERSIONS | jq -c ".[] | select(.name == \"$TAG\") | .released = true | .releaseDate = \"$RELEASE_DATE\" | del(.userReleaseDate) "  | sed 's/\"/\\"/g'`
 JIRA_VERSION_URL=`echo $VERSIONS | jq -c ".[] | select(.name == \"$TAG\") | .self"`
 curl -s --location \
