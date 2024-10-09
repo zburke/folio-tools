@@ -85,16 +85,17 @@ if [ ! "$NPM_VERSION" = "$TAG" ]; then
 fi
 
 # validate optional arguments
-# hash-from defaults to the last tag on the current branch, if not specified
+# hash-from defaults to the common ancestor of the last tag and HEAD
 if [[ -z $HASH_FROM ]]; then
-    HASH_FROM=`git tag -l --merged HEAD --sort=creatordate | tail -1`
+    LAST_TAG=`git tag -l  --sort=creatordate | egrep '^v' | tail -1`
+    HASH_FROM=`git merge-base $LAST_TAG HEAD`
 fi
 
 if [ ! git show $HASH_FROM > /dev/null 2>&1 ]; then
     quit "Sorry; $HASH_FROM was not recognized as a tag or commit hash."
 fi
 
-# hash-to defaults to tip of current branch if not specified
+# hash-to defaults to HEAD
 if [[ -z $HASH_TO ]]; then
     HASH_TO=`git rev-parse --abbrev-ref HEAD`
 fi
@@ -126,7 +127,7 @@ TICKETS=`git log --pretty=oneline ${HASH_FROM}..${HASH_TO} | cut -c42- | egrep "
 JIRA_AUTH_HEADER=`printf "${JIRA_USER}:${JIRA_PASS}" | base64`
 
 echo "tagging release $GHTAG and pushing it to GitHub..."
-git tag -a $GHTAG -m "Release $GHTAG"
+git tag -s $GHTAG -m "Release $GHTAG"
 git push -q
 git push --tags -q
 
@@ -138,7 +139,7 @@ if [ ! "$?" = "0" ]; then
     echo "Creating Jira version $TAG"
     PROJECT_ID=`echo $VERSIONS | jq -r '.[].projectId' | uniq`
 
-    curl --request POST \
+    curl -s --request POST \
         --url 'https://folio-org.atlassian.net/rest/api/2/version' \
         -H "Authorization: Basic $JIRA_AUTH_HEADER" \
         --header 'Accept: application/json' \
