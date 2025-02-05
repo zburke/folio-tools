@@ -46,12 +46,12 @@ class JSpam {
   getSecurityServiceCredentials()
   {
     const credentials = {  };
-    return this.getAttr('jira-password', 'acct')
+    return this.getAttr('jira-apitoken', 'acct')
     .then(username => {
       credentials.username = username.trim();
       return credentials.username;
     })
-    .then(username => this.getPassword('jira-password', username))
+    .then(username => this.getPassword('jira-apitoken', username))
     .then(password => {
       credentials.password = password.trim();
       return credentials;
@@ -91,8 +91,10 @@ class JSpam {
   async getMatrix(matrixUrl)
   {
     const modules = {};
-    const matrix = (await axios.get(matrixUrl)).data;
-    // const matrix = fs.readFileSync('/Users/zburke/Downloads/matrix.html', { encoding: 'UTF-8' });
+//     const matrix = (await axios.get(matrixUrl)).data;
+//
+//     console.log( matrix );
+    const matrix = fs.readFileSync('./matrix.html', { encoding: 'UTF-8' });
 
     const userFromTd = (td) => {
       let name = td.querySelector ? td.querySelector('a')?.getAttribute('data-username')?.trim() : null;
@@ -127,6 +129,20 @@ class JSpam {
   }
 
   /**
+   * timeout
+   * Resolve after 200ms to avoid Atlassian rate limiting
+   * https://developer.atlassian.com/cloud/jira/platform/rate-limiting/
+   *
+   * @return Promise
+   */
+  timeout()
+  {
+    return new Promise(res => {
+      setTimeout(() => res(), 200);
+    });
+  }
+
+  /**
    * teamForName
    * provide a map from team-name (in the team-project responsibility matrix)
    * to its ID in Jira.
@@ -138,65 +154,69 @@ class JSpam {
   teamForName(name)
   {
     const teams = {
-      "@cult": 10304,
-      "AQA": 12272,
-      "Bama": 12226,
-      "Bienenvolk": 10308,
-        "Bienenvolk (fka ERM)": 10308,
-      "Citation": 12705,
-      "Concorde": 10571,
-      "Core: Platform": 10432,
-        "Core Platform": 10432,
-      "EBSCO - FSE": 10307,
-      "ERM": 12221,
-      "ERM Subgroup Dev Team": 10308,
-        "ERM Delivery": 10308,
-        "Bienenvolk": 10308,
-        "Bienenvolk (fka ERM Delivery)": 10308,
-      "Falcon": 11327,
-      "FSE": 10307,
-      "Firebird": 10883,
-        "Firebird team": 10883,
-      "Folijet": 10390,
-        "Folijet Team": 10390,
-      "Folijet Support": 12101,
-      "FOLIO DevOps": 10882,
-      "Frontside": 10305,
-      "Gulfstream": 10884,
-      "K-Int": 12269,
-      "Kitfox": 12001,
-      "Lehigh": 10388,
-        "NSIP(Lehigh)": 10388,
-      "Leipzig": 10389,
-      "Mjolnir": 12602,
-      "Prokopovych": 10302,
-        "Core functional team": 10302,
-        "Prokopovych (Core: Functional)": 10302,
-        "Prokopovych (Core functional) team": 10302,
-        "Core: Functional": 10302,
-        "Prokopovych Team": 10302,
-        "Prokopovych team": 10302,
-      "Qulto": 10306,
-      "Reporting": 11022,
-      "Reservoir Dogs": 12601,
-      "Scanbit": 10903,
-      "Scout": 11405,
-      "Sif": 12228,
-      "Siphon": 12702,
-      "Spitfire": 10420,
-        "Spitfire Team": 10420,
-      "Spring Force": 11814,
-      "Stacks": 10303,
-      "Stripes Force": 10421,
-      "Thor": 10609,
-      "Thunderjet": 10418,
-        "Thunderjet Team": 10418,
-      "UNAM": 10309,
-      "Vega": 10419,
-        "Vega Team": 10419,
-      "Volaris": 11807,
-      "仁者无敌 \"Benevolence\"": 10909,
-      "None": 11025,
+      "@cult": 10138,
+      "Aggies": 10139,
+      "Bama": 10140,
+      "Bienenvolk": 10141,
+        "Bienenvolk (fka ERM)": 10141,
+        "Bienenvolk (fka ERM Delivery)": 10141,
+        "ERM Subgroup Dev Team": 10141,
+        "ERM Delivery": 10141,
+      "Citation": 10142,
+      "Core: Platform": 10144,
+        "Core Platform": 10144,
+      "Corsair": 10145,
+      "EBSCO - FSE": 10147,
+      "Eureka": 10149,
+      "Dreamliner": 10150,
+      "Firebird": 10152,
+        "Firebird team": 10152,
+      "Folijet": 10153,
+        "Folijet team": 10153,
+      "FOLIO DevOps": 10155,
+      "Frontside": 10156,
+      "Gutenberg": 10158,
+      "K-Int": 10159,
+      "Kinetics": 10160,
+      "Kitfox": 10161,
+      "Lehigh": 10162,
+        "NSIP(Lehigh)": 10162,
+      "Leipzig": 10163,
+      "Mjolnir": 10164,
+      "MOL": 10165,
+      "Mriya": 10166,
+      "NLA": 10167,
+      "Odin": 10169,
+      "Other dev": 10170,
+      "PTF": 10172,
+      "Qulto": 10173,
+      "Reporting": 10174,
+      "Reservoir Dogs": 10175,
+      "Scanbit": 10176,
+      "Scout": 10177,
+      "Sif": 10178,
+      "Siphon": 10179,
+      "Spitfire": 10180,
+        "Spitfire Team": 10180,
+      "Spring Force": 10181,
+      "Stacks": 10182,
+      "Stripes Force": 10183,
+      "Thor": 10184,
+      "Thunderjet": 10185,
+        "Thunderjet Team": 10185,
+      "UNAM": 10186,
+      "Vega": 10187,
+        "Vega Team": 10187,
+      "Volaris": 10188,
+      "Nighthawk": 10495,
+
+//       "Prokopovych": 10302,
+//         "Core functional team": 10302,
+//         "Prokopovych (Core: Functional)": 10302,
+//         "Prokopovych (Core functional) team": 10302,
+//         "Core: Functional": 10302,
+//         "Prokopovych Team": 10302,
+//         "Prokopovych team": 10302,
     };
 
     let team = null;
@@ -204,25 +224,29 @@ class JSpam {
     // even if we _don't_ have a project for the given name, we still
     // resolve, not reject, because we still want to create the ticket;
     // it just won't be assignable to a team.
-    return new Promise((resolve, reject) => {
-      if (teams[name]) {
-        axios.get(`${this.jira}/rest/api/2/customFieldOption/${teams[name]}`)
-          .then(res => {
-            const team = res.data;
-            team.id = `${teams[name]}`;
+    return this.timeout().then(() => {
+      return new Promise((resolve, reject) => {
+        if (teams[name]) {
+          axios.get(`${this.jira}/rest/api/2/customFieldOption/${teams[name]}`)
+            .then(res => {
+              const team = res.data;
+              team.id = `${teams[name]}`;
 
-            resolve(team);
-          });
-      }
-      else {
-        console.warn(`Could not match team "${name}"`);
-        resolve(null);
-      }
-
+              resolve(team);
+            });
+        }
+        else {
+          console.warn(`Could not match team "${name}"`);
+          resolve(null);
+        }
+      });
     });
+
+
   }
 
-  createTicket({summary, description, project, epic, labels, team, cc})
+
+  createTicket({summary, description, project, epic, labels, team, cc, assignee})
   {
     const body = {
       "fields": {
@@ -234,7 +258,7 @@ class JSpam {
     };
 
     if (epic) {
-      body.fields.customfield_10002 = epic;
+      body.fields.parent = { key: epic };
     }
 
     if (labels) {
@@ -246,7 +270,7 @@ class JSpam {
     }
 
     if (team) {
-      body.fields.customfield_10501 = team;
+      body.fields.customfield_10057 = team;
     }
 
     if (cc && cc.length) {
@@ -254,9 +278,13 @@ class JSpam {
       body.fields.description += `\n\nAttn: ${attn}`;
     }
 
+    if (assignee) {
+      body.fields.assignee = assignee;
+    }
+
     return axios.post(`${this.jira}/rest/api/2/issue`, body, {
       auth: this.credentials,
-    });
+    })
   }
 
 
@@ -309,7 +337,13 @@ class JSpam {
 
       .option('e', {
         alias: 'epic',
-        describe: 'jira epic to link to',
+        describe: 'jira parent issue (formerly epic)',
+        type: 'string',
+      })
+
+      .option('a', {
+        alias: 'assignee',
+        describe: 'Jira user to assign the ticket to',
         type: 'string',
       })
 
@@ -353,21 +387,26 @@ class JSpam {
   /**
    * eachPromise
    * iterate through an array of items IN SERIES, applying the given async
-   * function to each.
+   * function to each, with a delay between each element.
    * @arg [] arr array of elements
    * @arg function fn function to apply to each element
    * @return promise
    */
   eachPromise(arr, fn)
   {
+    //
     if (!Array.isArray(arr)) return Promise.reject(new Error('Array not found'));
-    return arr.reduce((prev, cur) => (prev.then(() => fn(cur))), Promise.resolve());
+    return arr.reduce((prev, cur) => {
+      return prev
+        .then(this.timeout)
+        .then(() => fn(cur))
+    }, Promise.resolve());
   };
 
 
   async main()
   {
-    this.jira = 'https://issues.folio.org';
+    this.jira = 'https://folio-org.atlassian.net';
 
     // const contents = JSON.parse(fs.readFileSync(filename, { encoding: 'UTF-8'}));
     //
@@ -387,7 +426,7 @@ class JSpam {
       this.linkTypes = await axios.get(`${this.jira}/rest/api/2/issueLinkType`);
       this.relatesLink = this.linkTypes.data.issueLinkTypes.find(link => link.name === 'Relates');
 
-      const matrix = await this.getMatrix('https://wiki.folio.org/pages/viewpage.action?pageId=14463134');
+      const matrix = await this.getMatrix('https://folio-org.atlassian.net/wiki/spaces/REL/pages/5210256/FOLIO+Module+JIRA+project-Team-PO-Dev+Lead+responsibility+matrix');
 
       // get ticket from Jira
       let link;
@@ -412,7 +451,8 @@ class JSpam {
             return p.substring(p.indexOf('/') + 1);
           }
         })
-        .filter(Boolean);
+        .filter(Boolean)
+        .sort();
 
       // get projects from JIRA
       axios.get(`${this.jira}/rest/api/2/project`)
@@ -469,7 +509,7 @@ class JSpam {
               console.log(`created ${ticket.data.key} (${d})`)
             })
             .catch(e => {
-              console.error(e.response ?? e);
+              console.error('err', e.response ? e.response.statusText : e.statusText);
             });
           }
           else {
