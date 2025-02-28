@@ -72,6 +72,12 @@ class JSpam {
           password: argv.password,
         });
       }
+      else if (argv.username && argv.token) {
+        res({
+          username: argv.username,
+          password: argv.token,
+        });
+      }
       else {
         return this.getSecurityServiceCredentials()
         .then(credentials => res(credentials))
@@ -374,6 +380,11 @@ class JSpam {
 
       .option('password', {
         describe: 'jira password',
+        type: 'string',
+      })
+
+      .option('token', {
+        describe: 'jira API token',
         type: 'string',
       })
 
